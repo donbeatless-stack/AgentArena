@@ -12,10 +12,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Pinned runner: ubuntu-latest is moving to 26.04, which Playwright's --with-deps does not support yet.
 jobs:
   lint:
     name: Lint (ruff)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -27,7 +28,7 @@ jobs:
 
   backend:
     name: Backend tests (Python ${{ matrix.python }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +46,7 @@ jobs:
 
   frontend:
     name: Frontend build (TypeScript strict)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -59,7 +60,7 @@ jobs:
 
   e2e:
     name: Browser end-to-end
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v7
