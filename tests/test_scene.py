@@ -28,7 +28,9 @@ def test_model_context_preserves_business_facts_without_ui_or_connection_metadat
     arena = client.post("/api/arenas", json=arena_config).json()
     service = client.app.state.service
     store = arena["snapshot"]["merchants"][0]
-    observation = service.observation(service.db.arena(arena["id"]), arena["snapshot"], store, arena["snapshot"]["market"])
+    observation = service.observation(
+        service.db.arena(arena["id"]), arena["snapshot"], store, arena["snapshot"]["market"]
+    )
     context = decision_context(observation)
     assert context["store"]["inventory"] == store["inventory"]
     assert context["store"]["cash"] == store["cash"]
@@ -47,7 +49,11 @@ def test_planner_usage_is_reported_in_public_events(client, arena_config, model_
     assert result.status_code == 200, result.text
     decision = result.json()["decisions"][0]
     events = client.get(path + "/timeline").json()
-    calls = [item for item in events if item["merchant_id"] == decision["merchant_id"] and item["status"] == "model_completed"]
+    calls = [
+        item
+        for item in events
+        if item["merchant_id"] == decision["merchant_id"] and item["status"] == "model_completed"
+    ]
     assert sum(item["payload"]["input_tokens"] for item in calls) == decision["input_tokens"]
     assert sum(item["payload"]["output_tokens"] for item in calls) == decision["output_tokens"]
 
@@ -59,7 +65,16 @@ def test_adaptive_planning_expands_candidates_only_when_risky(client, arena_conf
     service = client.app.state.service
     store = arena["snapshot"]["merchants"][0]
     obs = service.observation(service.db.arena(arena["id"]), arena["snapshot"], store, arena["snapshot"]["market"])
-    state = {"observation": obs, "strategy": service.db.strategy("balanced"), "workflow": "adaptive", "mode": "rule", "input_tokens": 0, "output_tokens": 0, "stages": [], "routing": {"review_required": False}}
+    state = {
+        "observation": obs,
+        "strategy": service.db.strategy("balanced"),
+        "workflow": "adaptive",
+        "mode": "rule",
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "stages": [],
+        "routing": {"review_required": False},
+    }
     assert len(service.agents.decide(state)["candidates"]) == 1
     state["routing"]["review_required"] = True
     assert len(service.agents.decide(state)["candidates"]) == 2
@@ -77,8 +92,24 @@ def test_experience_recall_matches_cash_stock_and_explains_prediction_error(clie
     outcome = {"sold": 10, "inventory": 5, "missed": 1, "prediction_error": -2500}
     with service.db.connect() as conn:
         for number, cash, quantity in [(1, store["cash"], stock), (2, 1, 9999)]:
-            conn.execute("INSERT INTO experiences(arena_id,merchant_id,round_number,context,action,outcome) VALUES(?,?,?,?,?,?)",
-                         (arena["id"], store["id"], number, json.dumps({"event": market["event"]["type"], "demand": market["total_demand"], "cash_before": cash, "stock_before": quantity}), "{}", json.dumps(outcome)))
+            conn.execute(
+                "INSERT INTO experiences(arena_id,merchant_id,round_number,context,action,outcome) VALUES(?,?,?,?,?,?)",
+                (
+                    arena["id"],
+                    store["id"],
+                    number,
+                    json.dumps(
+                        {
+                            "event": market["event"]["type"],
+                            "demand": market["total_demand"],
+                            "cash_before": cash,
+                            "stock_before": quantity,
+                        }
+                    ),
+                    "{}",
+                    json.dumps(outcome),
+                ),
+            )
     memories = service.memory.recall(arena["id"], store["id"], 3, market, store)
     assert [item["round"] for item in memories] == [1, 2]
     assert "高估收益 25.00 元" in memories[0]["lesson"]
@@ -96,10 +127,18 @@ def test_review_revisions_share_one_tool_budget(client, arena_config, model_serv
     assert result.status_code == 200, result.text
     decision = result.json()["decisions"][0]
     events = client.get(path + "/timeline").json()
-    calls = [event for event in events if event["merchant_id"] == decision["merchant_id"] and event["status"] == "tool_completed"]
+    calls = [
+        event
+        for event in events
+        if event["merchant_id"] == decision["merchant_id"] and event["status"] == "tool_completed"
+    ]
     assert len(calls) == 3
     assert decision["trace"]["revisions"] == 1
-    usage = [event["payload"] for event in events if event["merchant_id"] == decision["merchant_id"] and event["status"] == "model_completed"]
+    usage = [
+        event["payload"]
+        for event in events
+        if event["merchant_id"] == decision["merchant_id"] and event["status"] == "model_completed"
+    ]
     assert sum(item["input_tokens"] for item in usage) == decision["input_tokens"]
 
 

@@ -29,12 +29,18 @@ def simulate_plan(observation, plan):
             supply = product["supply"]
             if shared:
                 # Rival orders are private: vary their assumed demand with the scenario.
-                rival_demand = product["demand"] / observation["merchant_count"] * max(0, observation["merchant_count"] - 1)
+                rival_demand = (
+                    product["demand"] / observation["merchant_count"] * max(0, observation["merchant_count"] - 1)
+                )
                 rival_demand *= 1.3 if label == "低需求" else 0.7 if label == "高需求" else 1
                 total_orders = item.purchase_quantity + rival_demand
                 if total_orders > supply:
                     supply = int(supply * item.purchase_quantity / total_orders)
-            quantity = min(item.purchase_quantity, supply, max(0, cash - market["rent"] - (decision.marketing_budget if shared else 0)) // product["cost"])
+            quantity = min(
+                item.purchase_quantity,
+                supply,
+                max(0, cash - market["rent"] - (decision.marketing_budget if shared else 0)) // product["cost"],
+            )
             cash -= quantity * product["cost"]
             available = stock["quantity"] + quantity
             book_value = stock["book_value"] + quantity * product["cost"]
@@ -56,16 +62,32 @@ def simulate_plan(observation, plan):
         advertising = min(decision.marketing_budget, max(0, cash - market["rent"]))
         fees = market["rent"] + round(holding * 0.012)
         closing_cash = max(0, cash - advertising + revenue - fees)
-        scenarios.append({"name": label, "profit": revenue - cogs - advertising - fees,
-                          "cash": closing_cash, "revenue": revenue, "sold": sold, "inventory": leftover})
+        scenarios.append(
+            {
+                "name": label,
+                "profit": revenue - cogs - advertising - fees,
+                "cash": closing_cash,
+                "revenue": revenue,
+                "sold": sold,
+                "inventory": leftover,
+            }
+        )
     worst = min(item["cash"] for item in scenarios)
     if worst < market["rent"] * 2:
         risks.append("低需求情景下现金缓冲不足两轮租金")
     expected = scenarios[1]["profit"]
     downside = min(item["profit"] for item in scenarios)
-    return {"expected_profit": expected, "worst_cash": worst, "score": round(expected * 0.7 + downside * 0.3) - len(risks) * 100000,
-            "purchase_cost": purchase_cost, "risks": risks, "scenarios": scenarios,
-            "supply_assumption": "按公开需求估计其他商店订单并比例分货；协商成功与进价尚不确定，实际到货可能更少" if shared else "按旧版轮换采购规则估算"}
+    return {
+        "expected_profit": expected,
+        "worst_cash": worst,
+        "score": round(expected * 0.7 + downside * 0.3) - len(risks) * 100000,
+        "purchase_cost": purchase_cost,
+        "risks": risks,
+        "scenarios": scenarios,
+        "supply_assumption": "按公开需求估计其他商店订单并比例分货；协商成功与进价尚不确定，实际到货可能更少"
+        if shared
+        else "按旧版轮换采购规则估算",
+    }
 
 
 def budget_plan(observation, plan):
@@ -78,7 +100,11 @@ def budget_plan(observation, plan):
     actions = []
     for item in decision.products:
         cost = products[item.product_id]["cost"]
-        quantity = min(item.purchase_quantity, products[item.product_id]["supply"] // observation["merchant_count"], available // cost)
+        quantity = min(
+            item.purchase_quantity,
+            products[item.product_id]["supply"] // observation["merchant_count"],
+            available // cost,
+        )
         available -= cost * quantity
         actions.append(item.model_copy(update={"purchase_quantity": quantity}))
     return decision.model_copy(update={"products": actions, "marketing_budget": marketing}).model_dump()

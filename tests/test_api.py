@@ -33,7 +33,9 @@ def test_run_replay_fork_and_export(client, arena_config):
     fork = client.post(f"/api/arenas/{arena_id}/fork").json()
     assert fork["id"] != arena_id and fork["current_round"] == 0
     assert fork["seed"] == arena["seed"]
-    assert [item["strategy_id"] for item in fork["snapshot"]["merchants"]] == [item["strategy_id"] for item in arena["snapshot"]["merchants"]]
+    assert [item["strategy_id"] for item in fork["snapshot"]["merchants"]] == [
+        item["strategy_id"] for item in arena["snapshot"]["merchants"]
+    ]
 
 
 def test_restart_keeps_snapshots_and_recovers_running_as_paused(tmp_path, arena_config):
@@ -59,10 +61,19 @@ def test_strategy_snapshots_and_model_secrets(client, arena_config):
     arena = client.post("/api/arenas", json=arena_config).json()
     created["name"] = "新版本策略"
     assert client.put(f"/api/strategies/{created['id']}", json=created).status_code == 200
-    assert client.get(f"/api/arenas/{arena['id']}").json()["snapshot"]["merchants"][0]["strategy_name"] == "自定义现金策略"
+    assert (
+        client.get(f"/api/arenas/{arena['id']}").json()["snapshot"]["merchants"][0]["strategy_name"] == "自定义现金策略"
+    )
     replayed = client.post(f"/api/arenas/{arena['id']}/fork").json()
     assert replayed["snapshot"]["merchants"][0]["strategy_name"] == "自定义现金策略"
-    settings = {"base_url": "http://127.0.0.1:9991/v1", "model": "test-model", "api_key": "secret-test-key", "temperature": 0.5, "timeout": 5, "max_steps": 10}
+    settings = {
+        "base_url": "http://127.0.0.1:9991/v1",
+        "model": "test-model",
+        "api_key": "secret-test-key",
+        "temperature": 0.5,
+        "timeout": 5,
+        "max_steps": 10,
+    }
     response = client.put("/api/settings", json=settings)
     assert response.status_code == 200
     assert response.json()["has_key"] is True
@@ -75,7 +86,16 @@ def test_strategy_snapshots_and_model_secrets(client, arena_config):
 
 
 def test_experiment_rotates_seats_and_aggregates_real_outcomes(client):
-    response = client.post("/api/experiments", json={"name": "对照实验", "strategy_ids": ["balanced", "discount", "adaptive"], "rounds": 3, "seeds": [11, 23], "mode": "rule"})
+    response = client.post(
+        "/api/experiments",
+        json={
+            "name": "对照实验",
+            "strategy_ids": ["balanced", "discount", "adaptive"],
+            "rounds": 3,
+            "seeds": [11, 23],
+            "mode": "rule",
+        },
+    )
     assert response.status_code == 201, response.text
     experiment = response.json()
     assert len(experiment["arenas"]) == 2
@@ -98,7 +118,10 @@ def test_boundary_validation_and_missing_resources(client, arena_config):
     arena_config["merchants"][0]["strategy_id"] = "balanced"
     arena_config["merchants"][0]["mode"] = "llm"
     assert client.post("/api/arenas", json=arena_config).status_code == 400
-    assert client.post("/api/experiments", json={"name": "重复策略", "strategy_ids": ["balanced", "balanced"]}).status_code == 422
+    assert (
+        client.post("/api/experiments", json={"name": "重复策略", "strategy_ids": ["balanced", "balanced"]}).status_code
+        == 422
+    )
     arena_config["merchants"][0]["mode"] = "rule"
     arena_config["total_rounds"] = 0
     assert client.post("/api/arenas", json=arena_config).status_code == 422

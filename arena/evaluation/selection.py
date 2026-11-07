@@ -21,14 +21,29 @@ def select_and_validate(service, experiment_id, request):
     required = development["config"]["rounds"] * len(request.seeds) * 2
     if required > request.round_budget:
         raise ValueError(f"本次验证需要 {required} 个商店回合，超过预算 {request.round_budget}")
-    config = ExperimentInput(name=development["name"][:40] + " · 独立验证", scenario=development["config"]["scenario"],
-                             rounds=development["config"]["rounds"], seeds=request.seeds, split="holdout",
-                             variants=[ExperimentVariant.model_validate(item) for item in [baseline, winner]])
-    validation = service.create_experiment(config, strategy_configs=development["config"]["strategies"], profile_configs=[item["model_config"] for item in [baseline, winner]],
-                                           supply_policy=development["config"].get("supply_policy", LEGACY_POLICY))
+    config = ExperimentInput(
+        name=development["name"][:40] + " · 独立验证",
+        scenario=development["config"]["scenario"],
+        rounds=development["config"]["rounds"],
+        seeds=request.seeds,
+        split="holdout",
+        variants=[ExperimentVariant.model_validate(item) for item in [baseline, winner]],
+    )
+    validation = service.create_experiment(
+        config,
+        strategy_configs=development["config"]["strategies"],
+        profile_configs=[item["model_config"] for item in [baseline, winner]],
+        supply_policy=development["config"].get("supply_policy", LEGACY_POLICY),
+    )
     stored = validation["config"]
-    stored["selection"] = {"development_id": experiment_id, "selected_variant": winner["name"], "rule": "无破产方案中开发集平均收益最大；同收益选 Token 更少者", "round_budget": request.round_budget,
-                           "required_store_rounds": required, "warning": "开发集选择有偏；是否有效以独立验证结果为准"}
+    stored["selection"] = {
+        "development_id": experiment_id,
+        "selected_variant": winner["name"],
+        "rule": "无破产方案中开发集平均收益最大；同收益选 Token 更少者",
+        "round_budget": request.round_budget,
+        "required_store_rounds": required,
+        "warning": "开发集选择有偏；是否有效以独立验证结果为准",
+    }
     with service.db.connect() as conn:
         conn.execute("UPDATE experiments SET config=? WHERE id=?", (encode(stored), validation["id"]))
     return service.experiment(validation["id"])

@@ -72,10 +72,14 @@ class Runner:
         message_id = None
         job = None
         if self.redis:
-            messages = await self.redis.xreadgroup("arena-workers", self.owner, {"arena:commands": ">"}, count=1, block=100)
+            messages = await self.redis.xreadgroup(
+                "arena-workers", self.owner, {"arena:commands": ">"}, count=1, block=100
+            )
             items = messages[0][1] if messages else []
             if not items:
-                reclaimed = await self.redis.xautoclaim("arena:commands", "arena-workers", self.owner, min_idle_time=15000, start_id="0-0", count=1)
+                reclaimed = await self.redis.xautoclaim(
+                    "arena:commands", "arena-workers", self.owner, min_idle_time=15000, start_id="0-0", count=1
+                )
                 items = reclaimed[1]
             if items:
                 message_id, message = items[0]
@@ -86,7 +90,10 @@ class Runner:
         if job is None:
             job = self.store.claim(self.owner)
         if job:
-            self.tasks[job["id"]] = {"arena_id": job["arena_id"], "task": asyncio.create_task(self.execute(job, message_id))}
+            self.tasks[job["id"]] = {
+                "arena_id": job["arena_id"],
+                "task": asyncio.create_task(self.execute(job, message_id)),
+            }
         else:
             await asyncio.sleep(0.05)
 
@@ -111,7 +118,9 @@ class Runner:
             if arena["status"] in ("running", "stepping"):
                 raise ConflictError("请先暂停比赛")
             with self.db.connect() as connection:
-                pending = connection.execute("SELECT 1 FROM execution_jobs WHERE arena_id=? AND state='running'", (arena_id,)).fetchone()
+                pending = connection.execute(
+                    "SELECT 1 FROM execution_jobs WHERE arena_id=? AND state='running'", (arena_id,)
+                ).fetchone()
             if pending:
                 raise ConflictError("本轮正在结束，请稍后单步执行")
             if arena["status"] == "completed":
@@ -154,7 +163,11 @@ class Runner:
             pass
         except Exception as error:
             message = model_error(error, self.db.model_secrets())
-            transient = isinstance(error, (APIConnectionError, APITimeoutError)) or isinstance(error, APIStatusError) and (error.status_code == 429 or error.status_code >= 500)
+            transient = (
+                isinstance(error, (APIConnectionError, APITimeoutError))
+                or isinstance(error, APIStatusError)
+                and (error.status_code == 429 or error.status_code >= 500)
+            )
             with suppress(LeaseLost):
                 if transient and job["attempts"] < 3 and self.db.arena(job["arena_id"])["status"] == "running":
                     self.store.retry(job, message)

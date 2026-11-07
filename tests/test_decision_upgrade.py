@@ -16,7 +16,9 @@ def configured(client, config, approval="off"):
     config = copy.deepcopy(config)
     config["approval_policy"] = approval
     for merchant in config["merchants"]:
-        merchant.update(workflow="adaptive", agent_options={"memory": "episodic", "negotiation": True, "tool_budget": 4})
+        merchant.update(
+            workflow="adaptive", agent_options={"memory": "episodic", "negotiation": True, "tool_budget": 4}
+        )
     return client.post("/api/arenas", json=config).json()
 
 
@@ -30,9 +32,13 @@ def test_real_events_negotiation_delivery_and_scoped_memory(client, arena_config
         for decision in arena["decisions"]:
             contracts = decision["trace"]["negotiation"]["contracts"]
             assert contracts
-            ledger = client.get(path + f"/ledger?round={number+1}&merchant={decision['merchant_id']}").json()
+            ledger = client.get(path + f"/ledger?round={number + 1}&merchant={decision['merchant_id']}").json()
             for contract in contracts:
-                deliveries = [item for item in ledger if item["kind"] == "purchase" and item["product_id"] == contract["product_id"]]
+                deliveries = [
+                    item
+                    for item in ledger
+                    if item["kind"] == "purchase" and item["product_id"] == contract["product_id"]
+                ]
                 assert sum(item["quantity"] for item in deliveries) == contract["quantity"]
                 assert sum(item["amount"] for item in deliveries) == -contract["quantity"] * contract["unit_price"]
             assert all(memory["round"] <= number for memory in decision["trace"]["memory"])
@@ -46,7 +52,10 @@ def test_real_events_negotiation_delivery_and_scoped_memory(client, arena_config
     assert all(event["round_number"] == 2 for event in client.get(path + "/timeline?round=2").json())
     with client.app.state.database.connect() as conn:
         for product in arena["snapshot"]["market"]["products"]:
-            total = conn.execute("SELECT SUM(quantity) FROM supplier_reservations WHERE arena_id=? AND round_number=3 AND product_id=?", (arena["id"], product["id"])).fetchone()[0]
+            total = conn.execute(
+                "SELECT SUM(quantity) FROM supplier_reservations WHERE arena_id=? AND round_number=3 AND product_id=?",
+                (arena["id"], product["id"]),
+            ).fetchone()[0]
             assert total <= product["supply"]
         assert not conn.execute("SELECT 1 FROM supplier_reservations WHERE status='reserved'").fetchone()
 
@@ -67,7 +76,9 @@ def test_approval_survives_restart_and_modified_plan_is_settled_once(tmp_path, a
         plan["marketing_budget"] = 0
         for item in plan["products"]:
             item["purchase_quantity"] = 5
-        response = client.post(path + f"/approvals/{first['id']}", json={"action": "modify", "plan": plan, "reason": "人工限制采购"})
+        response = client.post(
+            path + f"/approvals/{first['id']}", json={"action": "modify", "plan": plan, "reason": "人工限制采购"}
+        )
         assert response.status_code == 200, response.text
         arena = response.json()
         while arena["approvals"]:
@@ -79,7 +90,9 @@ def test_approval_survives_restart_and_modified_plan_is_settled_once(tmp_path, a
         assert client.post(path + f"/approvals/{first['id']}", json={"action": "approve"}).status_code == 400
         assert client.post(path + "/step", json={"expected_round": 0}).status_code == 409
         ledger = client.get(path + "/ledger").json()
-        assert len({(item["round_number"], item["merchant_id"], item["kind"], item["product_id"]) for item in ledger}) == len(ledger)
+        assert len(
+            {(item["round_number"], item["merchant_id"], item["kind"], item["product_id"]) for item in ledger}
+        ) == len(ledger)
 
 
 def test_human_rejection_replans_and_requires_another_approval(client, arena_config):
@@ -93,7 +106,9 @@ def test_human_rejection_replans_and_requires_another_approval(client, arena_con
     assert arena["status"] == "awaiting_approval" and arena["current_round"] == 0
     assert arena["approvals"][0]["proposal"]["plan"]
     assert arena["approvals"][0]["version"] == 1
-    assert client.post(path + f"/approvals/{approval['id']}", json={"action": "approve", "version": 0}).status_code == 400
+    assert (
+        client.post(path + f"/approvals/{approval['id']}", json={"action": "approve", "version": 0}).status_code == 400
+    )
     events = client.get(path + "/timeline").json()
     assert sum(event["node"] == "decide" and event["status"] == "completed" for event in events) == 2
     assert client.get(path + "/ledger").json() == []
@@ -124,8 +139,12 @@ def test_counterfactual_fork_keeps_history_state_seed_and_independent_future(cli
     point = client.get(path + "?round=1").json()
     fork = client.post(path + "/fork", json={"round": 1}).json()
     assert fork["current_round"] == 1 and fork["seed"] == original["seed"]
-    assert [item["cash"] for item in fork["snapshot"]["merchants"]] == [item["cash"] for item in point["snapshot"]["merchants"]]
-    assert [item["inventory"] for item in fork["snapshot"]["merchants"]] == [item["inventory"] for item in point["snapshot"]["merchants"]]
+    assert [item["cash"] for item in fork["snapshot"]["merchants"]] == [
+        item["cash"] for item in point["snapshot"]["merchants"]
+    ]
+    assert [item["inventory"] for item in fork["snapshot"]["merchants"]] == [
+        item["inventory"] for item in point["snapshot"]["merchants"]
+    ]
     assert fork["parent_arena_id"] == arena["id"]
     result = client.post(f"/api/arenas/{fork['id']}/step", json={"expected_round": 1})
     assert result.status_code == 200, result.text
@@ -152,7 +171,12 @@ def test_no_memory_and_no_cross_arena_evidence(client, arena_config):
     third = client.post("/api/arenas", json=config).json()
     for number in range(2):
         result = client.post(f"/api/arenas/{third['id']}/step", json={"expected_round": number}).json()
-    assert all(not item["observation"]["history"] and not item["observation"]["store"]["memory"] and not item["trace"]["memory"] for item in result["decisions"])
+    assert all(
+        not item["observation"]["history"]
+        and not item["observation"]["store"]["memory"]
+        and not item["trace"]["memory"]
+        for item in result["decisions"]
+    )
 
 
 def test_llm_dynamic_tools_and_independent_negotiation_contexts(client, arena_config, model_server):
@@ -177,10 +201,22 @@ def test_llm_dynamic_tools_and_independent_negotiation_contexts(client, arena_co
 
 
 def test_selection_requires_untouched_seeds_and_enforces_validation_budget(client):
-    config = {"name": "能力消融", "scenario": "festival", "rounds": 3, "seeds": [11], "split": "development", "variants": [
-        {"name": "无记忆", "strategy_id": "balanced", "workflow": "adaptive", "agent_options": {"memory": "none"}},
-        {"name": "经验与谈判", "strategy_id": "balanced", "workflow": "adaptive", "agent_options": {"memory": "episodic", "negotiation": True}},
-    ]}
+    config = {
+        "name": "能力消融",
+        "scenario": "festival",
+        "rounds": 3,
+        "seeds": [11],
+        "split": "development",
+        "variants": [
+            {"name": "无记忆", "strategy_id": "balanced", "workflow": "adaptive", "agent_options": {"memory": "none"}},
+            {
+                "name": "经验与谈判",
+                "strategy_id": "balanced",
+                "workflow": "adaptive",
+                "agent_options": {"memory": "episodic", "negotiation": True},
+            },
+        ],
+    }
     experiment = client.post("/api/experiments", json=config).json()
     service = client.app.state.service
     for arena in experiment["arenas"]:
@@ -191,7 +227,12 @@ def test_selection_requires_untouched_seeds_and_enforces_validation_budget(clien
     assert all(score["prediction_mae"] is not None for score in result["scores"])
     assert next(score for score in result["scores"] if score["name"] == "经验与谈判")["memory_references"] > 0
     assert client.post(f"/api/experiments/{experiment['id']}/select", json={"seeds": [11]}).status_code == 400
-    assert client.post(f"/api/experiments/{experiment['id']}/select", json={"seeds": [101, 211], "round_budget": 6}).status_code == 400
+    assert (
+        client.post(
+            f"/api/experiments/{experiment['id']}/select", json={"seeds": [101, 211], "round_budget": 6}
+        ).status_code
+        == 400
+    )
     response = client.post(f"/api/experiments/{experiment['id']}/select", json={"seeds": [101], "round_budget": 6})
     assert response.status_code == 201, response.text
     validation = response.json()
@@ -214,18 +255,33 @@ def test_competing_negotiations_reserve_atomically_and_expired_contracts_cannot_
         plan = rule_decision(obs, service.db.strategy(merchant["strategy_id"])).model_dump()
         for action in plan["products"]:
             action["purchase_quantity"] = 10
-        states.append({"observation": obs, "decision": plan, "mode": "rule", "thread_id": f"reservation-{merchant['id']}"})
+        states.append(
+            {"observation": obs, "decision": plan, "mode": "rule", "thread_id": f"reservation-{merchant['id']}"}
+        )
     with ThreadPoolExecutor(max_workers=3) as executor:
         results = list(executor.map(service.agents.negotiator.run, states))
     for product in ["coffee", "oats", "bar"]:
-        assert sum(item["quantity"] for result in results for item in result["contracts"] if item["product_id"] == product) == 1
+        assert (
+            sum(item["quantity"] for result in results for item in result["contracts"] if item["product_id"] == product)
+            == 1
+        )
     assert service.agents.negotiator.run(states[0]) == results[0]
-    contracts = {state["observation"]["store"]["id"]: {item["product_id"]: item for item in result["contracts"]} for state, result in zip(states, results)}
+    contracts = {
+        state["observation"]["store"]["id"]: {item["product_id"]: item for item in result["contracts"]}
+        for state, result in zip(states, results)
+    }
     for items in contracts.values():
         for item in items.values():
             item["expires_round"] = 0
     with pytest.raises(ValueError, match="过期"):
-        settle(arena["snapshot"], {state["observation"]["store"]["id"]: state["decision"] for state in states}, states[0]["observation"]["market"], arena["initial_capital"], arena["seed"], contracts)
+        settle(
+            arena["snapshot"],
+            {state["observation"]["store"]["id"]: state["decision"] for state in states},
+            states[0]["observation"]["market"],
+            arena["initial_capital"],
+            arena["seed"],
+            contracts,
+        )
 
 
 def test_lost_worker_cannot_reserve_supplier_stock(client, arena_config):
@@ -238,7 +294,15 @@ def test_lost_worker_cannot_reserve_supplier_stock(client, arena_config):
     merchant = arena["snapshot"]["merchants"][0]
     obs = service.observation(service.db.arena(arena["id"]), arena["snapshot"], merchant, arena["snapshot"]["market"])
     with pytest.raises(LeaseLost):
-        service.agents.negotiator.run({"observation": obs, "decision": rule_decision(obs, service.db.strategy(merchant["strategy_id"])).model_dump(), "mode": "rule", "thread_id": "old-worker"}, job)
+        service.agents.negotiator.run(
+            {
+                "observation": obs,
+                "decision": rule_decision(obs, service.db.strategy(merchant["strategy_id"])).model_dump(),
+                "mode": "rule",
+                "thread_id": "old-worker",
+            },
+            job,
+        )
     with service.db.connect() as conn:
         assert not conn.execute("SELECT 1 FROM supplier_reservations").fetchone()
 

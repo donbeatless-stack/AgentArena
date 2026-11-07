@@ -21,7 +21,10 @@ def client(tmp_path):
 @pytest.fixture
 def arena_config():
     return {
-        "name": "测试市场", "scenario": "neighborhood", "seed": 42, "total_rounds": 5,
+        "name": "测试市场",
+        "scenario": "neighborhood",
+        "seed": 42,
+        "total_rounds": 5,
         "initial_capital": 1000000,
         "merchants": [
             {"name": "北辰商店", "strategy_id": "balanced", "mode": "rule", "color": "violet"},

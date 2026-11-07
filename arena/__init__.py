@@ -1,4 +1,5 @@
 """AgentArena application packages."""
+
 import sys
 
 from arena.domain import models

@@ -45,7 +45,9 @@ class AgentOptions(BaseModel):
 class RoutingPlan(BaseModel):
     objective: str = Field(min_length=1, max_length=250)
     reason: str = Field(min_length=1, max_length=400)
-    tools: list[Literal["inspect_store", "observe_market", "review_history", "evaluate_plan", "recall_experience"]] = Field(max_length=5)
+    tools: list[Literal["inspect_store", "observe_market", "review_history", "evaluate_plan", "recall_experience"]] = (
+        Field(max_length=5)
+    )
     review_required: bool
 
 
@@ -128,9 +130,15 @@ class ModelSettings(BaseModel):
     def normalize_url(cls, value):
         value = value.strip().rstrip("/")
         if value.endswith("/chat/completions"):
-            value = value[:-len("/chat/completions")]
+            value = value[: -len("/chat/completions")]
         parsed = urlsplit(value)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc or parsed.query or parsed.fragment or parsed.username:
+        if (
+            parsed.scheme not in ("http", "https")
+            or not parsed.netloc
+            or parsed.query
+            or parsed.fragment
+            or parsed.username
+        ):
             raise ValueError("请填写有效的 API 根地址，例如 https://api.deepseek.com")
         return value
 

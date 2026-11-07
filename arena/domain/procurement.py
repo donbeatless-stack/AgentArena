@@ -22,33 +22,48 @@ def allocate_orders(previous, plans, market, agreements, seed):
             if negotiated and agreement is None:
                 continue
             if agreement:
-                if agreement["expires_round"] != market["round"] or agreement["unit_price"] <= 0 or agreement["quantity"] <= 0:
+                if (
+                    agreement["expires_round"] != market["round"]
+                    or agreement["unit_price"] <= 0
+                    or agreement["quantity"] <= 0
+                ):
                     raise ValueError("无效或已过期的采购协议")
                 if agreement["quantity"] > action["purchase_quantity"]:
                     raise ValueError("采购协议超过批准的采购数量")
             price = agreement["unit_price"] if agreement else product["cost"]
-            quantity = min(agreement["quantity"] if agreement else action["purchase_quantity"],
-                           product["supply"], cash // price)
+            quantity = min(
+                agreement["quantity"] if agreement else action["purchase_quantity"], product["supply"], cash // price
+            )
             cash -= quantity * price
             if quantity:
                 orders[merchant["id"]][product_id] = {
-                    "product_id": product_id, "supplier_id": "wholesale", "unit_price": price,
-                    "reference_price": product["cost"], "expires_round": market["round"],
-                    "requested_quantity": quantity, "quantity": quantity,
+                    "product_id": product_id,
+                    "supplier_id": "wholesale",
+                    "unit_price": price,
+                    "reference_price": product["cost"],
+                    "expires_round": market["round"],
+                    "requested_quantity": quantity,
+                    "quantity": quantity,
                 }
 
     offset = (seed + market["round"] - 1) % len(merchants)
     priority = {merchant["id"]: index for index, merchant in enumerate(merchants[offset:] + merchants[:offset])}
     for product in market["products"]:
-        bidders = [(merchant_id, items[product["id"]]) for merchant_id, items in orders.items() if product["id"] in items]
+        bidders = [
+            (merchant_id, items[product["id"]]) for merchant_id, items in orders.items() if product["id"] in items
+        ]
         total = sum(order["requested_quantity"] for _, order in bidders)
         if total > product["supply"]:
             for _, order in bidders:
                 order["quantity"] = order["requested_quantity"] * product["supply"] // total
             remaining = product["supply"] - sum(order["quantity"] for _, order in bidders)
-            ranked = sorted(bidders, key=lambda item: (
-                -(item[1]["requested_quantity"] * product["supply"] % total), priority[item[0]],
-            ))
+            ranked = sorted(
+                bidders,
+                key=lambda item: (
+                    -(item[1]["requested_quantity"] * product["supply"] % total),
+                    priority[item[0]],
+                ),
+            )
             for _, order in ranked[:remaining]:
                 order["quantity"] += 1
         for _, order in bidders:
@@ -60,8 +75,11 @@ def purchase_outcomes(merchant, plan, market, agreements, entries):
     """Derive displayed delivery facts from the ledger, including legacy rounds."""
     products = {item["id"]: item for item in market["products"]}
     agreed = {item["product_id"]: item for item in agreements}
-    purchases = {item["product_id"]: item for item in entries
-                 if item["merchant_id"] == merchant["id"] and item["kind"] == "purchase"}
+    purchases = {
+        item["product_id"]: item
+        for item in entries
+        if item["merchant_id"] == merchant["id"] and item["kind"] == "purchase"
+    }
     negotiated = merchant.get("agent_options", {}).get("negotiation", False)
     outcomes = []
     for action in plan["products"]:
@@ -70,13 +88,35 @@ def purchase_outcomes(merchant, plan, market, agreements, entries):
         agreement = agreed.get(product_id)
         quantity = entry["quantity"] if entry else 0
         requested = action["purchase_quantity"]
-        price = (-entry["amount"] // quantity if entry else
-                 agreement["unit_price"] if agreement else
-                 None if negotiated else products[product_id]["cost"])
-        status = ("fulfilled" if quantity >= requested and quantity else "partial" if quantity else
-                  "not_ordered" if not requested or merchant["bankrupt"] else
-                  "unavailable" if products[product_id]["supply"] == 0 else
-                  "rejected" if negotiated and not agreement else "unavailable")
-        outcomes.append({"product_id": product_id, "requested_quantity": requested, "quantity": quantity,
-                         "unit_price": price, "status": status})
+        price = (
+            -entry["amount"] // quantity
+            if entry
+            else agreement["unit_price"]
+            if agreement
+            else None
+            if negotiated
+            else products[product_id]["cost"]
+        )
+        status = (
+            "fulfilled"
+            if quantity >= requested and quantity
+            else "partial"
+            if quantity
+            else "not_ordered"
+            if not requested or merchant["bankrupt"]
+            else "unavailable"
+            if products[product_id]["supply"] == 0
+            else "rejected"
+            if negotiated and not agreement
+            else "unavailable"
+        )
+        outcomes.append(
+            {
+                "product_id": product_id,
+                "requested_quantity": requested,
+                "quantity": quantity,
+                "unit_price": price,
+                "status": status,
+            }
+        )
     return outcomes

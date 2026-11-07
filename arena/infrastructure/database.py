@@ -141,13 +141,25 @@ class Database:
                 );
             """)
             for strategy in STRATEGIES:
-                connection.execute("INSERT OR IGNORE INTO strategies(id,name,config,built_in) VALUES(?,?,?,1)",
-                                   (strategy["id"], strategy["name"], encode(strategy)))
+                connection.execute(
+                    "INSERT OR IGNORE INTO strategies(id,name,config,built_in) VALUES(?,?,?,1)",
+                    (strategy["id"], strategy["name"], encode(strategy)),
+                )
             connection.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('model',?)", (encode(MODEL_DEFAULTS),))
             columns = {
-                "merchants": {"model_profile_id": "TEXT", "model_config": "TEXT NOT NULL DEFAULT '{}'", "workflow": "TEXT NOT NULL DEFAULT 'direct'", "agent_options": "TEXT NOT NULL DEFAULT '{}'"},
+                "merchants": {
+                    "model_profile_id": "TEXT",
+                    "model_config": "TEXT NOT NULL DEFAULT '{}'",
+                    "workflow": "TEXT NOT NULL DEFAULT 'direct'",
+                    "agent_options": "TEXT NOT NULL DEFAULT '{}'",
+                },
                 "decisions": {"model_config": "TEXT NOT NULL DEFAULT '{}'", "trace": "TEXT NOT NULL DEFAULT '{}'"},
-                "arenas": {"approval_policy": "TEXT NOT NULL DEFAULT 'off'", "parent_arena_id": "INTEGER", "fork_round": "INTEGER", "supply_policy": "TEXT NOT NULL DEFAULT 'sequential_v1'"},
+                "arenas": {
+                    "approval_policy": "TEXT NOT NULL DEFAULT 'off'",
+                    "parent_arena_id": "INTEGER",
+                    "fork_round": "INTEGER",
+                    "supply_policy": "TEXT NOT NULL DEFAULT 'sequential_v1'",
+                },
                 "approvals": {"version": "INTEGER NOT NULL DEFAULT 0"},
             }
             for table, additions in columns.items():
@@ -157,13 +169,19 @@ class Database:
                         connection.execute(f"ALTER TABLE {table} ADD COLUMN {name} {declaration}")
             legacy = json.loads(connection.execute("SELECT value FROM settings WHERE key='model'").fetchone()[0])
             config = ModelSettings.model_validate(legacy).model_dump()
-            connection.execute("INSERT OR IGNORE INTO model_profiles(id,name,config) VALUES('default','默认连接',?)", (encode(config),))
-            connection.execute("UPDATE arenas SET status='paused' WHERE status IN ('running','stepping') AND NOT EXISTS (SELECT 1 FROM execution_jobs WHERE arena_id=arenas.id AND state IN ('queued','running'))")
+            connection.execute(
+                "INSERT OR IGNORE INTO model_profiles(id,name,config) VALUES('default','默认连接',?)", (encode(config),)
+            )
+            connection.execute(
+                "UPDATE arenas SET status='paused' WHERE status IN ('running','stepping') AND NOT EXISTS (SELECT 1 FROM execution_jobs WHERE arena_id=arenas.id AND state IN ('queued','running'))"
+            )
 
     def strategies(self):
         with self.connect() as connection:
-            return [dict(json.loads(row["config"]), built_in=bool(row["built_in"]))
-                    for row in connection.execute("SELECT * FROM strategies ORDER BY built_in DESC,created_at,id")]
+            return [
+                dict(json.loads(row["config"]), built_in=bool(row["built_in"]))
+                for row in connection.execute("SELECT * FROM strategies ORDER BY built_in DESC,created_at,id")
+            ]
 
     def strategy(self, strategy_id):
         with self.connect() as connection:
@@ -205,14 +223,20 @@ class Database:
         with self.connect() as connection:
             if profile_id:
                 self.model_settings(profile_id)
-                connection.execute("UPDATE model_profiles SET name=?,config=?,enabled=? WHERE id=?",
-                                   (values["name"], encode(values), values["enabled"], profile_id))
+                connection.execute(
+                    "UPDATE model_profiles SET name=?,config=?,enabled=? WHERE id=?",
+                    (values["name"], encode(values), values["enabled"], profile_id),
+                )
             else:
                 connection.execute("BEGIN IMMEDIATE")
-                number = connection.execute("SELECT COALESCE(MAX(CAST(SUBSTR(id,7) AS INTEGER)),0)+1 FROM model_profiles WHERE id LIKE 'model-%'").fetchone()[0]
+                number = connection.execute(
+                    "SELECT COALESCE(MAX(CAST(SUBSTR(id,7) AS INTEGER)),0)+1 FROM model_profiles WHERE id LIKE 'model-%'"
+                ).fetchone()[0]
                 profile_id = f"model-{number}"
-                connection.execute("INSERT INTO model_profiles(id,name,config,enabled) VALUES(?,?,?,?)",
-                                   (profile_id, values["name"], encode(values), values["enabled"]))
+                connection.execute(
+                    "INSERT INTO model_profiles(id,name,config,enabled) VALUES(?,?,?,?)",
+                    (profile_id, values["name"], encode(values), values["enabled"]),
+                )
         return self.public_model(self.model_settings(profile_id))
 
     def resolve_model(self, snapshot=None):
@@ -223,7 +247,10 @@ class Database:
 
     def model_secrets(self):
         with self.connect() as connection:
-            return [json.loads(row["config"]).get("api_key", "") for row in connection.execute("SELECT config FROM model_profiles")]
+            return [
+                json.loads(row["config"]).get("api_key", "")
+                for row in connection.execute("SELECT config FROM model_profiles")
+            ]
 
     def arena(self, arena_id):
         with self.connect() as connection:
@@ -235,13 +262,20 @@ class Database:
     def snapshot(self, arena_id, round_number=None):
         with self.connect() as connection:
             if round_number is None:
-                row = connection.execute("SELECT snapshot FROM rounds WHERE arena_id=? ORDER BY number DESC LIMIT 1", (arena_id,)).fetchone()
+                row = connection.execute(
+                    "SELECT snapshot FROM rounds WHERE arena_id=? ORDER BY number DESC LIMIT 1", (arena_id,)
+                ).fetchone()
             else:
-                row = connection.execute("SELECT snapshot FROM rounds WHERE arena_id=? AND number=?", (arena_id, round_number)).fetchone()
+                row = connection.execute(
+                    "SELECT snapshot FROM rounds WHERE arena_id=? AND number=?", (arena_id, round_number)
+                ).fetchone()
         if row is None:
             raise KeyError("回合不存在")
         return json.loads(row["snapshot"])
 
     def set_status(self, arena_id, status, error=None):
         with self.connect() as connection:
-            connection.execute("UPDATE arenas SET status=?,error=?,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?", (status, error, arena_id))
+            connection.execute(
+                "UPDATE arenas SET status=?,error=?,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?",
+                (status, error, arena_id),
+            )

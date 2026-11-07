@@ -14,13 +14,16 @@ from tests.test_decision_upgrade import configured
 from tests.test_model import ModelHandler, configure, sample_plan
 
 
-@pytest.mark.parametrize("schema,data,role", [
-    (Decision, sample_plan(), "decide"),
-    (CandidatePlans, {"candidates": [sample_plan(), sample_plan()]}, "decide"),
-    (RoutingPlan, {"objective": "保留现金", "reason": "现金紧张", "tools": [], "review_required": True}, "route"),
-    (PlanReview, {"approved": True, "issues": [], "reason": "预算足够"}, "review"),
-    (NegotiationAction, {"action": "reject", "unit_price": 0, "quantity": 0, "reason": "退出"}, "negotiate"),
-])
+@pytest.mark.parametrize(
+    "schema,data,role",
+    [
+        (Decision, sample_plan(), "decide"),
+        (CandidatePlans, {"candidates": [sample_plan(), sample_plan()]}, "decide"),
+        (RoutingPlan, {"objective": "保留现金", "reason": "现金紧张", "tools": [], "review_required": True}, "route"),
+        (PlanReview, {"approved": True, "issues": [], "reason": "预算足够"}, "review"),
+        (NegotiationAction, {"action": "reject", "unit_price": 0, "quantity": 0, "reason": "退出"}, "negotiate"),
+    ],
+)
 @pytest.mark.parametrize("suffix", ["", '], "review": "模型附加评语"}'])
 def test_complete_json_is_validated_and_trailing_content_is_observable(schema, data, role, suffix):
     events = []
@@ -28,13 +31,19 @@ def test_complete_json_is_validated_and_trailing_content_is_observable(schema, d
         result = parse_model_response(schema, " \n" + json.dumps(data) + suffix, role)
     assert result.model_dump() == data
     if suffix:
-        assert events == [(role, "response_normalized", "已读取完整 JSON，忽略末尾附加内容",
-                           {"schema": schema.__name__, "ignored_characters": len(suffix)})]
+        assert events == [
+            (
+                role,
+                "response_normalized",
+                "已读取完整 JSON，忽略末尾附加内容",
+                {"schema": schema.__name__, "ignored_characters": len(suffix)},
+            )
+        ]
     else:
         assert events == []
 
 
-@pytest.mark.parametrize("content", ['{"candidates":[', '{"candidates":}', '评语在前 {"candidates":[]}', ''])
+@pytest.mark.parametrize("content", ['{"candidates":[', '{"candidates":}', '评语在前 {"candidates":[]}', ""])
 def test_incomplete_json_is_not_invented_or_exposed(content):
     with pytest.raises(ValueError, match="JSON 不完整或格式有误") as error:
         parse_model_response(CandidatePlans, content, "decide")
@@ -58,7 +67,9 @@ def test_trailing_content_does_not_relax_business_validation(invalid):
     assert "input_value" not in str(error.value)
 
 
-def test_failed_planner_checkpoint_resumes_and_all_roles_accept_complete_json(tmp_path, arena_config, model_server, monkeypatch):
+def test_failed_planner_checkpoint_resumes_and_all_roles_accept_complete_json(
+    tmp_path, arena_config, model_server, monkeypatch
+):
     original = test_model.role_value
 
     def require_review(name, payload):
@@ -75,7 +86,9 @@ def test_failed_planner_checkpoint_resumes_and_all_roles_accept_complete_json(tm
         return schema.model_validate_json(content)
 
     def planner_requests():
-        return [item for item in ModelHandler.requests if '"title": "CandidatePlans"' in str(item["messages"][0]["content"])]
+        return [
+            item for item in ModelHandler.requests if '"title": "CandidatePlans"' in str(item["messages"][0]["content"])
+        ]
 
     with TestClient(create_app(tmp_path, seed_demo=False)) as client:
         configure(client, model_server)
@@ -105,9 +118,16 @@ def test_failed_planner_checkpoint_resumes_and_all_roles_accept_complete_json(tm
         assert decision["trace"]["reviews"][0]["approved"]
         assert len(decision["trace"]["negotiation"]["contracts"]) == 3
         events = client.get(path + "/timeline?limit=1000").json()
-        assert {event["node"] for event in events if event["status"] == "response_normalized"} == {"route", "decide", "review", "negotiate"}
+        assert {event["node"] for event in events if event["status"] == "response_normalized"} == {
+            "route",
+            "decide",
+            "review",
+            "negotiate",
+        }
         ledger = client.get(path + "/ledger").json()
         for merchant in arena["snapshot"]["merchants"]:
-            assert merchant["cash"] == initial_cash[merchant["id"]] + sum(item["amount"] for item in ledger if item["merchant_id"] == merchant["id"])
+            assert merchant["cash"] == initial_cash[merchant["id"]] + sum(
+                item["amount"] for item in ledger if item["merchant_id"] == merchant["id"]
+            )
         assert client.post(path + "/step", json={"expected_round": 0}).status_code == 409
         assert client.get(path + "/ledger").json() == ledger

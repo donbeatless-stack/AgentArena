@@ -40,7 +40,9 @@ def test_fencing_rejects_old_worker_and_outbox_commits_with_job(tmp_path, arena_
         jobs = client.get(f"/api/arenas/{arena_id}/tasks").json()
         assert jobs[0]["attempts"] == 2
         with client.app.state.database.connect() as connection:
-            assert connection.execute("SELECT COUNT(*) FROM command_outbox WHERE job_id=?", (job_id,)).fetchone()[0] == 1
+            assert (
+                connection.execute("SELECT COUNT(*) FROM command_outbox WHERE job_id=?", (job_id,)).fetchone()[0] == 1
+            )
 
 
 def test_killed_worker_is_replaced_and_financial_effects_remain_unique(tmp_path, arena_config):
@@ -51,9 +53,14 @@ def test_killed_worker_is_replaced_and_financial_effects_remain_unique(tmp_path,
         client.post(f"/api/arenas/{arena_id}/run", json={"interval": 0.4})
 
         def spawn_worker():
-            process = subprocess.Popen([sys.executable, "-m", "arena.worker", "--lease-seconds", "1.5", "--idle-exit", "5"],
-                                       cwd=PROJECT_ROOT, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                       creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+            process = subprocess.Popen(
+                [sys.executable, "-m", "arena.worker", "--lease-seconds", "1.5", "--idle-exit", "5"],
+                cwd=PROJECT_ROOT,
+                env=environment,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
             workers.append(process)
             return process
 

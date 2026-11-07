@@ -35,29 +35,45 @@ from arena.infrastructure.config import DATA_DIR, EXECUTION_MODE, PROJECT_ROOT, 
 from arena.infrastructure.database import Database, encode
 
 
-def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str = REDIS_URL, execution_mode: str = EXECUTION_MODE):
+def create_app(
+    data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str = REDIS_URL, execution_mode: str = EXECUTION_MODE
+):
     @asynccontextmanager
     async def lifespan(app):
         database = Database(data_dir)
         database.initialize()
         agents = AgentEngine(data_dir, database.resolve_model)
         service = ArenaService(database, agents)
-        runner = Runner(service, redis_url, consume=execution_mode != "external", shutdown_pause=execution_mode != "external")
+        runner = Runner(
+            service, redis_url, consume=execution_mode != "external", shutdown_pause=execution_mode != "external"
+        )
         app.state.database, app.state.service, app.state.runner = database, service, runner
         await runner.open()
         if seed_demo and not service.listing():
-            merchants = [MerchantInput(name=name, strategy_id=strategy, color=color)
-                         for name, strategy, color in zip(MERCHANT_NAMES, ["balanced", "discount", "premium"], COLORS)]
-            demo = service.create(ArenaInput(name="周末市集 · 揭幕战", scenario="festival", total_rounds=12, seed=42, merchants=merchants))
+            merchants = [
+                MerchantInput(name=name, strategy_id=strategy, color=color)
+                for name, strategy, color in zip(MERCHANT_NAMES, ["balanced", "discount", "premium"], COLORS)
+            ]
+            demo = service.create(
+                ArenaInput(name="周末市集 · 揭幕战", scenario="festival", total_rounds=12, seed=42, merchants=merchants)
+            )
             for number in range(12):
                 await asyncio.to_thread(service.advance, demo["id"], number)
-            service.create(ArenaInput(name="街区新赛季", scenario="neighborhood", total_rounds=20, seed=2026, merchants=merchants))
+            service.create(
+                ArenaInput(name="街区新赛季", scenario="neighborhood", total_rounds=20, seed=2026, merchants=merchants)
+            )
         yield
         await runner.close()
         agents.close()
 
-    app = FastAPI(title="AgentArena", version="1.1.0", lifespan=lifespan,
-                  docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
+    app = FastAPI(
+        title="AgentArena",
+        version="1.1.0",
+        lifespan=lifespan,
+        docs_url="/api/docs",
+        openapi_url="/api/openapi.json",
+        redoc_url=None,
+    )
 
     @app.exception_handler(KeyError)
     async def not_found(request, error):
@@ -65,7 +81,12 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, error):
-        return JSONResponse(status_code=422, content={"detail": [{"loc": item["loc"], "msg": item["msg"], "type": item["type"]} for item in error.errors()]})
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": [{"loc": item["loc"], "msg": item["msg"], "type": item["type"]} for item in error.errors()]
+            },
+        )
 
     @app.exception_handler(ConflictError)
     async def conflict(request, error):
@@ -77,7 +98,9 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
 
     @app.exception_handler(APIError)
     async def model_error(request, error):
-        return JSONResponse(status_code=400, content={"detail": provider_error(error, app.state.database.model_secrets())})
+        return JSONResponse(
+            status_code=400, content={"detail": provider_error(error, app.state.database.model_secrets())}
+        )
 
     @app.exception_handler(GraphRecursionError)
     async def step_limit(request, error):
@@ -85,8 +108,21 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "storage": "sqlite", "queue": "redis" if redis_url else "sqlite", "execution": execution_mode,
-                "features": ["adaptive-planning", "negotiation", "episodic-memory", "human-approval", "decision-events", "counterfactual-forks", "capability-evaluation"]}
+        return {
+            "status": "ok",
+            "storage": "sqlite",
+            "queue": "redis" if redis_url else "sqlite",
+            "execution": execution_mode,
+            "features": [
+                "adaptive-planning",
+                "negotiation",
+                "episodic-memory",
+                "human-approval",
+                "decision-events",
+                "counterfactual-forks",
+                "capability-evaluation",
+            ],
+        }
 
     @app.get("/api/arenas/{arena_id}/tasks")
     def execution_tasks(arena_id: int):
@@ -100,11 +136,17 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
     @app.get("/api/overview")
     def overview():
         arenas = app.state.service.listing()
-        return {"arenas": arenas, "strategies": app.state.database.strategies(), "stats": {
-            "arenas": len(arenas), "completed": sum(item["status"] == "completed" for item in arenas),
-            "rounds": sum(item["current_round"] for item in arenas), "revenue": sum(item["total_revenue"] for item in arenas),
-            "active": sum(item["status"] == "running" for item in arenas),
-        }}
+        return {
+            "arenas": arenas,
+            "strategies": app.state.database.strategies(),
+            "stats": {
+                "arenas": len(arenas),
+                "completed": sum(item["status"] == "completed" for item in arenas),
+                "rounds": sum(item["current_round"] for item in arenas),
+                "revenue": sum(item["total_revenue"] for item in arenas),
+                "active": sum(item["status"] == "running" for item in arenas),
+            },
+        }
 
     @app.get("/api/arenas")
     def listing():
@@ -142,7 +184,12 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
         return app.state.service.comparison(arena_id)
 
     @app.get("/api/arenas/{arena_id}/timeline")
-    def timeline(arena_id: int, after: int = Query(0, ge=0), round: int | None = Query(None, ge=1), limit: int = Query(500, ge=1, le=1000)):
+    def timeline(
+        arena_id: int,
+        after: int = Query(0, ge=0),
+        round: int | None = Query(None, ge=1),
+        limit: int = Query(500, ge=1, le=1000),
+    ):
         app.state.database.arena(arena_id)
         return app.state.service.events.listing(arena_id, after, round, limit)
 
@@ -174,17 +221,61 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
                 name = item["merchant_name"]
                 if name.startswith(("=", "+", "-", "@")):
                     name = "'" + name
-                writer.writerow([item["round_number"], name, labels[item["kind"]], item["product_id"], item["quantity"], item["amount"] / 100, item["balance"] / 100])
-            return Response(content="\ufeff" + output.getvalue(), media_type="text/csv; charset=utf-8",
-                            headers={"Content-Disposition": f'attachment; filename="arena-{arena_id}-ledger.csv"'})
+                writer.writerow(
+                    [
+                        item["round_number"],
+                        name,
+                        labels[item["kind"]],
+                        item["product_id"],
+                        item["quantity"],
+                        item["amount"] / 100,
+                        item["balance"] / 100,
+                    ]
+                )
+            return Response(
+                content="\ufeff" + output.getvalue(),
+                media_type="text/csv; charset=utf-8",
+                headers={"Content-Disposition": f'attachment; filename="arena-{arena_id}-ledger.csv"'},
+            )
         with app.state.database.connect() as connection:
-            snapshots = [json.loads(row["snapshot"]) for row in connection.execute("SELECT snapshot FROM rounds WHERE arena_id=? ORDER BY number", (arena_id,))]
-            events = [{**dict(row), "payload": json.loads(row["payload"])} for row in connection.execute("SELECT * FROM decision_events WHERE arena_id=? ORDER BY id", (arena_id,))]
-            contracts = [dict(row) for row in connection.execute("SELECT * FROM supplier_reservations WHERE arena_id=? ORDER BY id", (arena_id,))]
-        result = {"arena": arena, "snapshots": snapshots, "decisions": [decision for number in range(1, arena["current_round"] + 1) for decision in service.decisions(arena_id, number)], "ledger": service.ledger(arena_id),
-                  "events": events, "contracts": contracts, "experiences": [item for merchant in arena["snapshot"]["merchants"] for item in service.memory.listing(arena_id, merchant["id"])]}
-        return Response(content=json.dumps(result, ensure_ascii=False, indent=2), media_type="application/json",
-                        headers={"Content-Disposition": f'attachment; filename="arena-{arena_id}.json"'})
+            snapshots = [
+                json.loads(row["snapshot"])
+                for row in connection.execute(
+                    "SELECT snapshot FROM rounds WHERE arena_id=? ORDER BY number", (arena_id,)
+                )
+            ]
+            events = [
+                {**dict(row), "payload": json.loads(row["payload"])}
+                for row in connection.execute("SELECT * FROM decision_events WHERE arena_id=? ORDER BY id", (arena_id,))
+            ]
+            contracts = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT * FROM supplier_reservations WHERE arena_id=? ORDER BY id", (arena_id,)
+                )
+            ]
+        result = {
+            "arena": arena,
+            "snapshots": snapshots,
+            "decisions": [
+                decision
+                for number in range(1, arena["current_round"] + 1)
+                for decision in service.decisions(arena_id, number)
+            ],
+            "ledger": service.ledger(arena_id),
+            "events": events,
+            "contracts": contracts,
+            "experiences": [
+                item
+                for merchant in arena["snapshot"]["merchants"]
+                for item in service.memory.listing(arena_id, merchant["id"])
+            ],
+        }
+        return Response(
+            content=json.dumps(result, ensure_ascii=False, indent=2),
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="arena-{arena_id}.json"'},
+        )
 
     @app.get("/api/arenas/{arena_id}/events")
     async def events(arena_id: int, request: Request, after: int = Query(0, ge=0)):
@@ -208,7 +299,9 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
                     yield ": heartbeat\n\n"
                 await asyncio.sleep(0.15 if batch else 0.6)
 
-        return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+        return StreamingResponse(
+            stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+        )
 
     @app.get("/api/strategies")
     def strategies():
@@ -218,9 +311,13 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
     def create_strategy(body: StrategyInput):
         with app.state.database.connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
-            number = connection.execute("SELECT COALESCE(MAX(CAST(SUBSTR(id,10) AS INTEGER)),0)+1 FROM strategies WHERE id LIKE 'strategy-%'").fetchone()[0]
+            number = connection.execute(
+                "SELECT COALESCE(MAX(CAST(SUBSTR(id,10) AS INTEGER)),0)+1 FROM strategies WHERE id LIKE 'strategy-%'"
+            ).fetchone()[0]
             config = {**body.model_dump(), "id": f"strategy-{number}"}
-            connection.execute("INSERT INTO strategies(id,name,config) VALUES(?,?,?)", (config["id"], config["name"], encode(config)))
+            connection.execute(
+                "INSERT INTO strategies(id,name,config) VALUES(?,?,?)", (config["id"], config["name"], encode(config))
+            )
         return config
 
     @app.put("/api/strategies/{strategy_id}")
@@ -228,7 +325,9 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
         app.state.database.strategy(strategy_id)
         config = {**body.model_dump(), "id": strategy_id}
         with app.state.database.connect() as connection:
-            connection.execute("UPDATE strategies SET name=?,config=? WHERE id=?", (config["name"], encode(config), strategy_id))
+            connection.execute(
+                "UPDATE strategies SET name=?,config=? WHERE id=?", (config["name"], encode(config), strategy_id)
+            )
         return config
 
     @app.get("/api/experiments")
@@ -246,8 +345,11 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
     @app.get("/api/experiments/{experiment_id}/export")
     def export_experiment(experiment_id: int):
         result = app.state.service.experiment(experiment_id)
-        return Response(content=json.dumps(result, ensure_ascii=False, indent=2), media_type="application/json",
-                        headers={"Content-Disposition": f'attachment; filename="experiment-{experiment_id}.json"'})
+        return Response(
+            content=json.dumps(result, ensure_ascii=False, indent=2),
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="experiment-{experiment_id}.json"'},
+        )
 
     @app.post("/api/experiments/{experiment_id}/run")
     async def run_experiment(experiment_id: int):
@@ -268,7 +370,14 @@ def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str
     def settings():
         config = app.state.database.model_settings()
         api_key = config.pop("api_key")
-        return {**config, "has_key": bool(api_key), "queue": "redis" if redis_url else "sqlite", "storage": "SQLite", "execution": execution_mode, "queue_error": app.state.runner.queue_error}
+        return {
+            **config,
+            "has_key": bool(api_key),
+            "queue": "redis" if redis_url else "sqlite",
+            "storage": "SQLite",
+            "execution": execution_mode,
+            "queue_error": app.state.runner.queue_error,
+        }
 
     @app.put("/api/settings")
     def save_settings(body: ModelSettings):

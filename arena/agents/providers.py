@@ -46,8 +46,12 @@ def build_model(settings, json_mode=False):
     deepseek = is_deepseek(config)
     model_type = DeepSeekChat if deepseek else ChatOpenAI
     parameters = {
-        "model": config["model"], "api_key": config["api_key"], "base_url": config["base_url"],
-        "timeout": config["timeout"], "max_retries": 0, "max_tokens": config["max_tokens"],
+        "model": config["model"],
+        "api_key": config["api_key"],
+        "base_url": config["base_url"],
+        "timeout": config["timeout"],
+        "max_retries": 0,
+        "max_tokens": config["max_tokens"],
         "use_responses_api": False,
     }
     if deepseek:
@@ -70,8 +74,13 @@ def model_error(error, secrets=()):
         if isinstance(detail, dict):
             detail = detail.get("message", "")
         status = getattr(error, "status_code", "")
-        labels = {401: "API Key 无效或已过期", 402: "账户余额不足", 403: "没有访问该模型的权限",
-                  404: "模型或 API 地址不存在", 429: "模型请求限流或额度不足"}
+        labels = {
+            401: "API Key 无效或已过期",
+            402: "账户余额不足",
+            403: "没有访问该模型的权限",
+            404: "模型或 API 地址不存在",
+            429: "模型请求限流或额度不足",
+        }
         message = labels.get(status, "模型请求失败") + (f"（HTTP {status}）" if status else "")
         if detail:
             message += f"：{detail}"
@@ -88,8 +97,15 @@ def test_connection(config):
         raise ValueError("请填写模型名称和 API Key")
     started = time.monotonic()
     model = build_model(config)
-    schema = {"name": "connection_probe", "description": "返回连接校验结果", "parameters": {
-        "type": "object", "properties": {"status": {"type": "string", "enum": ["ok"]}}, "required": ["status"]}}
+    schema = {
+        "name": "connection_probe",
+        "description": "返回连接校验结果",
+        "parameters": {
+            "type": "object",
+            "properties": {"status": {"type": "string", "enum": ["ok"]}},
+            "required": ["status"],
+        },
+    }
     messages = [HumanMessage(content="Call connection_probe with status ok, then reply OK after receiving its result.")]
     response = model.bind_tools([schema]).invoke(messages)
     if not response.tool_calls or response.tool_calls[0]["name"] != "connection_probe":
@@ -100,5 +116,10 @@ def test_connection(config):
     final = model.bind_tools([schema]).invoke(messages)
     if final.tool_calls:
         raise ValueError("模型未完成工具结果回传校验，请重试或检查模型工具兼容性")
-    return {"status": "connected", "model": config["model"], "tool_calling": True,
-            "latency_ms": round((time.monotonic() - started) * 1000), "thinking": config.get("thinking", "disabled")}
+    return {
+        "status": "connected",
+        "model": config["model"],
+        "tool_calling": True,
+        "latency_ms": round((time.monotonic() - started) * 1000),
+        "thinking": config.get("thinking", "disabled"),
+    }

@@ -14,10 +14,20 @@ def conditions(scenario_id: str, seed: int, round_number: int):
     cost_multiplier = 1.0
     product_boost = ""
     if round_number % 7 == 0:
-        event = {"type": "scarcity", "name": "供应延迟", "description": "供应商到货减少，采购成本上升", "impact": "供给 −40% · 进价 +15%"}
+        event = {
+            "type": "scarcity",
+            "name": "供应延迟",
+            "description": "供应商到货减少，采购成本上升",
+            "impact": "供给 −40% · 进价 +15%",
+        }
         supply_multiplier, cost_multiplier = 0.6, 1.15
     elif round_number % 5 == 0:
-        event = {"type": "festival", "name": "街区音乐节", "description": "活动带动客流，能量补给需求增加", "impact": "客流 +35%"}
+        event = {
+            "type": "festival",
+            "name": "街区音乐节",
+            "description": "活动带动客流，能量补给需求增加",
+            "impact": "客流 +35%",
+        }
         demand_multiplier, product_boost = 1.35, "bar"
     elif round_number % 4 == 0:
         event = {"type": "rain", "name": "午后阵雨", "description": "客流回落，咖啡需求相对坚挺", "impact": "客流 −18%"}
@@ -27,17 +37,28 @@ def conditions(scenario_id: str, seed: int, round_number: int):
         cost_multiplier = 0.88
     goods = []
     for product in PRODUCTS:
-        demand = round(product["base_demand"] * scenario["demand_multiplier"] * demand_multiplier * randomizer.uniform(0.9, 1.1))
+        demand = round(
+            product["base_demand"] * scenario["demand_multiplier"] * demand_multiplier * randomizer.uniform(0.9, 1.1)
+        )
         if product["id"] == product_boost:
             demand = round(demand * 1.18)
-        goods.append({
-            **product,
-            "cost": round(product["cost"] * cost_multiplier),
-            "demand": demand,
-            "supply": round(product["base_supply"] * scenario["supply_multiplier"] * supply_multiplier),
-        })
-    return {"scenario": scenario_id, "scenario_name": scenario["name"], "round": round_number,
-            "event": event, "products": goods, "rent": scenario["rent"], "total_demand": sum(item["demand"] for item in goods)}
+        goods.append(
+            {
+                **product,
+                "cost": round(product["cost"] * cost_multiplier),
+                "demand": demand,
+                "supply": round(product["base_supply"] * scenario["supply_multiplier"] * supply_multiplier),
+            }
+        )
+    return {
+        "scenario": scenario_id,
+        "scenario_name": scenario["name"],
+        "round": round_number,
+        "event": event,
+        "products": goods,
+        "rent": scenario["rent"],
+        "total_demand": sum(item["demand"] for item in goods),
+    }
 
 
 def settle(previous, plans, market, initial_capital, seed, contracts=None, reserve_marketing=False):
@@ -55,13 +76,32 @@ def settle(previous, plans, market, initial_capital, seed, contracts=None, reser
             if supply[product_id] < 0:
                 raise ValueError("供货合同超出共享库存")
     price_map = {product["id"]: product for product in market["products"]}
-    metrics = {item["id"]: {"revenue": 0, "sold": 0, "procurement": 0, "marketing": 0, "operating_cost": 0,
-                              "cost_of_goods": 0, "purchased": 0, "missed": 0} for item in merchants}
+    metrics = {
+        item["id"]: {
+            "revenue": 0,
+            "sold": 0,
+            "procurement": 0,
+            "marketing": 0,
+            "operating_cost": 0,
+            "cost_of_goods": 0,
+            "purchased": 0,
+            "missed": 0,
+        }
+        for item in merchants
+    }
 
     def transact(merchant, kind, amount, quantity=0, product_id=""):
         merchant["cash"] += amount
-        entries.append({"merchant_id": merchant["id"], "kind": kind, "amount": amount,
-                        "quantity": quantity, "product_id": product_id, "balance": merchant["cash"]})
+        entries.append(
+            {
+                "merchant_id": merchant["id"],
+                "kind": kind,
+                "amount": amount,
+                "quantity": quantity,
+                "product_id": product_id,
+                "balance": merchant["cash"],
+            }
+        )
 
     # Rotate access to shared wholesale stock to avoid a permanent first-mover advantage.
     offset = (seed + round_number - 1) % len(merchants)
@@ -75,7 +115,9 @@ def settle(previous, plans, market, initial_capital, seed, contracts=None, reser
             product = price_map[action["product_id"]]
             stock["price"] = action["price"]
             # Reserve the daily rent before procurement and advertising.
-            available_cash = max(0, merchant["cash"] - market["rent"] - (plan["marketing_budget"] if reserve_marketing else 0))
+            available_cash = max(
+                0, merchant["cash"] - market["rent"] - (plan["marketing_budget"] if reserve_marketing else 0)
+            )
             negotiated = merchant["id"] in contracts
             contract = contracts.get(merchant["id"], {}).get(product["id"], {})
             unit_price = contract.get("unit_price", product["cost"])
@@ -100,10 +142,19 @@ def settle(previous, plans, market, initial_capital, seed, contracts=None, reser
     randomizer = random.Random(seed + round_number * 10000 + 1)
     for product in market["products"]:
         sold = {merchant["id"]: 0 for merchant in merchants}
-        stocks = {merchant["id"]: next(item for item in merchant["inventory"] if item["product_id"] == product["id"]) for merchant in merchants}
+        stocks = {
+            merchant["id"]: next(item for item in merchant["inventory"] if item["product_id"] == product["id"])
+            for merchant in merchants
+        }
         for _ in range(product["demand"]):
             willingness = product["reference_price"] * randomizer.uniform(0.8, 1.65)
-            eligible = [merchant for merchant in merchants if not merchant["bankrupt"] and stocks[merchant["id"]]["quantity"] > sold[merchant["id"]] and stocks[merchant["id"]]["price"] <= willingness]
+            eligible = [
+                merchant
+                for merchant in merchants
+                if not merchant["bankrupt"]
+                and stocks[merchant["id"]]["quantity"] > sold[merchant["id"]]
+                and stocks[merchant["id"]]["price"] <= willingness
+            ]
             if not eligible:
                 continue
             weights = []
@@ -141,15 +192,27 @@ def settle(previous, plans, market, initial_capital, seed, contracts=None, reser
         equity = merchant["cash"] + sum(item["book_value"] for item in merchant["inventory"])
         old_equity = next(item["equity"] for item in previous["merchants"] if item["id"] == merchant["id"])
         daily["profit"] = equity - old_equity
-        merchant.update(equity=equity, profit=equity - initial_capital, roi=round((equity - initial_capital) / initial_capital * 100, 2), metrics=daily)
+        merchant.update(
+            equity=equity,
+            profit=equity - initial_capital,
+            roi=round((equity - initial_capital) / initial_capital * 100, 2),
+            metrics=daily,
+        )
         merchant["total_revenue"] += daily["revenue"]
         merchant["total_sold"] += daily["sold"]
-        merchant["reputation"] = round(min(1.25, max(0.8, merchant["reputation"] + daily["marketing"] / 2000000 - daily["missed"] * 0.008)), 4)
+        merchant["reputation"] = round(
+            min(1.25, max(0.8, merchant["reputation"] + daily["marketing"] / 2000000 - daily["missed"] * 0.008)), 4
+        )
         merchant["bankrupt"] = equity < market["rent"]
     snapshot = {
-        "round": round_number, "market": market, "merchants": merchants,
-        "totals": {"revenue": sum(item["metrics"]["revenue"] for item in merchants),
-                   "sold": sum(item["metrics"]["sold"] for item in merchants),
-                   "demand": market["total_demand"], "profit": sum(item["profit"] for item in merchants)},
+        "round": round_number,
+        "market": market,
+        "merchants": merchants,
+        "totals": {
+            "revenue": sum(item["metrics"]["revenue"] for item in merchants),
+            "sold": sum(item["metrics"]["sold"] for item in merchants),
+            "demand": market["total_demand"],
+            "profit": sum(item["profit"] for item in merchants),
+        },
     }
     return snapshot, entries

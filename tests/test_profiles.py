@@ -4,8 +4,16 @@ from arena.infrastructure.database import Database
 
 
 def profile(base_url, name="Flash", model="deepseek-flash"):
-    return {"name": name, "base_url": base_url, "model": model, "api_key": "profile-secret", "provider": "deepseek",
-            "thinking": "enabled", "timeout": 5, "max_steps": 15}
+    return {
+        "name": name,
+        "base_url": base_url,
+        "model": model,
+        "api_key": "profile-secret",
+        "provider": "deepseek",
+        "thinking": "enabled",
+        "timeout": 5,
+        "max_steps": 15,
+    }
 
 
 def test_profiles_use_form_values_preserve_secrets_and_roundtrip_reasoning(client, model_server):

@@ -44,7 +44,11 @@ def assert_rejected_product_not_purchased(client, path, arena, sender):
     rejected = next(item for item in result["messages"] if item["product_id"] == "bar")
     assert not rejected["agreed"]
     assert rejected["messages"][-1] == {
-        "sender": sender, "action": "reject", "unit_price": 0, "quantity": 0, "reason": "本轮退出交易",
+        "sender": sender,
+        "action": "reject",
+        "unit_price": 0,
+        "quantity": 0,
+        "reason": "本轮退出交易",
     }
     merchant_id = decision["merchant_id"]
     ledger = client.get(path + f"/ledger?round=1&merchant={merchant_id}").json()
@@ -56,7 +60,9 @@ def assert_rejected_product_not_purchased(client, path, arena, sender):
     assert after["quantity"] == before["quantity"] - sold
     assert merchant["cash"] == decision["observation"]["store"]["cash"] + sum(item["amount"] for item in ledger)
     with client.app.state.database.connect() as conn:
-        assert not conn.execute("SELECT 1 FROM supplier_reservations WHERE merchant_id=? AND product_id='bar'", (merchant_id,)).fetchone()
+        assert not conn.execute(
+            "SELECT 1 FROM supplier_reservations WHERE merchant_id=? AND product_id='bar'", (merchant_id,)
+        ).fetchone()
 
 
 @pytest.mark.parametrize("sender", ["buyer", "supplier"])
@@ -75,7 +81,9 @@ def test_rejection_settles_without_purchase(client, arena_config, model_server, 
     assert_rejected_product_not_purchased(client, path, response.json(), sender)
 
 
-def test_failed_zero_price_checkpoint_resumes_after_restart_without_model_call(tmp_path, arena_config, model_server, monkeypatch):
+def test_failed_zero_price_checkpoint_resumes_after_restart_without_model_call(
+    tmp_path, arena_config, model_server, monkeypatch
+):
     class LegacyNegotiationAction(NegotiationAction):
         model_config = {"title": "NegotiationAction"}
         unit_price: int = Field(ge=1, le=10000)

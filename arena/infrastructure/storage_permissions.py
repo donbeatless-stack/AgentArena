@@ -7,9 +7,7 @@ from pathlib import Path
 
 LOGGER = logging.getLogger(__name__)
 SQLITE_FILES = tuple(
-    database + suffix
-    for database in ("arena.sqlite", "checkpoints.sqlite")
-    for suffix in ("", "-wal", "-shm")
+    database + suffix for database in ("arena.sqlite", "checkpoints.sqlite") for suffix in ("", "-wal", "-shm")
 )
 
 
