@@ -2,14 +2,14 @@
 
 多智能体商业经营沙盘。让不同经营策略在同一市场竞争，用实际成交、库存和现金流检验 Agent 的决策。
 
-这是 AgentArena 的独立源码仓库，代码、依赖配置与运行数据均以本目录为根。与原招聘网站仓库分别维护，不自动同步代码、提交或数据库。本仓库只发布 README，不包含其他项目文档或文档截图。
+这是 AgentArena 的独立源码仓库，代码、依赖配置与运行数据均以本目录为根。与原招聘网站仓库分别维护，不自动同步代码、提交或数据库。本仓库只发布 README 与 docs/images 截图，不包含其他项目文档。
 
 ## 启动
 
 需要 Python 3.11+、Node.js 20.19+。Windows PowerShell：
 
 ```powershell
-git clone git@github.com:ljx1230/AgentArena.git
+git clone https://github.com/donbeatless-stack/AgentArena.git
 cd AgentArena
 ./setup.ps1
 ./start.ps1
@@ -18,7 +18,7 @@ cd AgentArena
 macOS / Linux：
 
 ```bash
-git clone git@github.com:ljx1230/AgentArena.git
+git clone https://github.com/donbeatless-stack/AgentArena.git
 cd AgentArena
 bash setup.sh
 bash start.sh

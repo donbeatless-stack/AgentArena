@@ -1,6 +1,6 @@
 # AgentArena
 
-[![CI](https://github.com/ljx1230/AgentArena/actions/workflows/ci.yml/badge.svg)](https://github.com/ljx1230/AgentArena/actions/workflows/ci.yml)
+[![CI](https://github.com/donbeatless-stack/AgentArena/actions/workflows/ci.yml/badge.svg)](https://github.com/donbeatless-stack/AgentArena/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
 ![TypeScript](https://img.shields.io/badge/typescript-strict-blue)
 
@@ -83,6 +83,8 @@ flowchart TD
 
 Some nodes call models and others are plain code. Projection runs locally, and rule-based stores make no model calls at all.
 
+![Decision trace: workflow stages, the plan's rationale and candidate projections for one store](docs/images/decision-trace.png)
+
 ### One round, end to end
 
 ```mermaid
@@ -122,7 +124,7 @@ sequenceDiagram
 Requires Python 3.11+ and Node.js 20.19+.
 
 ```bash
-git clone https://github.com/ljx1230/AgentArena.git
+git clone https://github.com/donbeatless-stack/AgentArena.git
 cd AgentArena
 bash setup.sh      # Windows PowerShell: ./setup.ps1
 bash start.sh      # Windows PowerShell: ./start.ps1
@@ -135,7 +137,7 @@ API key. Any OpenAI-compatible endpoint with function calling works, and a dedic
 
 ![Dashboard with persisted matches and the language toggle](docs/images/dashboard.png)
 
-The UI follows the browser language (English or Chinese) and remembers the toggle in the top bar.
+The UI follows the browser language (English or Chinese) and remembers the toggle in the top bar. Each match also has an **agent language**, chosen at creation: prompts, tool descriptions, JSON schemas and everything the agents and rules write during the match use it. It is fixed for the match because model output is stored, and it is recorded with experiments so results stay comparable.
 
 For frontend development, run `npm run dev --prefix frontend` (port 5178, proxied to the API on 8010). API docs are served at
 `/api/docs`.
@@ -151,6 +153,7 @@ Copy `.env.example` to `.env`, or configure models in the UI. `.env` only seeds 
 | `ARENA_EXECUTION` | `embedded` | Set `external` to run workers via `python -m arena.worker` |
 | `REDIS_URL` | empty | Empty uses the SQLite-polled queue |
 | `MODEL_BASE_URL` / `MODEL_NAME` / `MODEL_API_KEY` | OpenAI / empty / empty | |
+| `ARENA_DEMO_LANGUAGE` | `en` | Language of the demo matches seeded on first launch (`en` or `zh`) |
 
 To run the stack with Redis and separate workers: `docker compose up --build -d` (add `--profile workers` for workers).
 
@@ -170,7 +173,7 @@ explicit opt-ins:
 
 ```bash
 .venv/bin/python -m arena.cli.benchmark   # free, reproducible rule-based baseline
-.venv/bin/python -m arena.cli.live_test --key-file key.txt --model deepseek-flash --workflow adaptive --steps 2
+.venv/bin/python -m arena.cli.live_test --key-file key.txt --model deepseek-flash --workflow adaptive --steps 2 --language en
 ```
 
 ## Project layout
@@ -194,11 +197,10 @@ tests/             Backend regression and protocol tests
 
 - [x] Lint, formatting and CI
 - [x] English / Chinese UI with a persistent language toggle
-- [ ] Locale-aware backend text (agent prompts, rule summaries, seeded demo data)
+- [x] Per-match agent language: English or Chinese prompts, tool descriptions, schemas and generated text
 - [ ] Concurrent per-store planning, with p50/p95 round latency measured before and after
 - [ ] OpenTelemetry tracing for graph nodes, tool calls and model calls
 - [ ] Hosted demo with authentication, rate limiting and server-side secret management
-- [ ] Native Anthropic and OpenAI providers, and a cross-model leaderboard
 
 ## Limitations
 
