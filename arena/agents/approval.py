@@ -4,8 +4,8 @@ import json
 
 from langgraph.types import interrupt
 
-from arena.domain.models import Decision
 from arena.domain.market import conditions
+from arena.domain.models import Decision
 from arena.infrastructure.database import encode
 from arena.infrastructure.events import emit
 

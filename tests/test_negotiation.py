@@ -4,9 +4,9 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import Field, ValidationError
 
-from arena.api.app import create_app
 from arena.agents import negotiation
 from arena.agents.structured import role_call
+from arena.api.app import create_app
 from arena.domain.models import NegotiationAction
 from tests import test_model
 from tests.test_decision_upgrade import configured

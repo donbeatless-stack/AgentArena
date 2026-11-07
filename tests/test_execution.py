@@ -7,8 +7,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from arena.api.app import create_app
-from arena.infrastructure.config import PROJECT_ROOT
 from arena.execution.tasks import LeaseLost, TaskStore
+from arena.infrastructure.config import PROJECT_ROOT
 
 
 def wait_until(work, timeout=20):
@@ -62,7 +62,7 @@ def test_killed_worker_is_replaced_and_financial_effects_remain_unique(tmp_path,
             wait_until(lambda: client.get(f"/api/arenas/{arena_id}").json()["current_round"] >= 1)
             first.kill()
             first.communicate(timeout=5)
-            second = spawn_worker()
+            spawn_worker()
             wait_until(lambda: client.get(f"/api/arenas/{arena_id}").json()["status"] == "completed")
             jobs = client.get(f"/api/arenas/{arena_id}/tasks").json()
             assert jobs[0]["attempts"] >= 2

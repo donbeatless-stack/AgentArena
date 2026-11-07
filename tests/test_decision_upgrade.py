@@ -3,14 +3,13 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-
 from fastapi.testclient import TestClient
 
-from arena.api.app import create_app
-from tests.test_model import ModelHandler, configure
 from arena.agents.engine import rule_decision
-from arena.execution.tasks import TaskStore, LeaseLost
+from arena.api.app import create_app
 from arena.domain.market import settle
+from arena.execution.tasks import LeaseLost, TaskStore
+from tests.test_model import ModelHandler, configure
 
 
 def configured(client, config, approval="off"):

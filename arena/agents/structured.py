@@ -11,7 +11,6 @@ from pydantic import BaseModel, ValidationError
 from arena.agents.providers import build_model, is_deepseek
 from arena.infrastructure.events import emit
 
-
 ResponseModel = TypeVar("ResponseModel", bound=BaseModel)
 
 

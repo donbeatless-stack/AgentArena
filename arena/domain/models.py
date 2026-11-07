@@ -1,7 +1,7 @@
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-from urllib.parse import urlsplit
 
 
 class ProductAction(BaseModel):

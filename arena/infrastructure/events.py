@@ -1,9 +1,9 @@
 """Durable, public business events. Never persist raw model reasoning or credentials."""
 
 import json
+from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Callable
 
 from arena.infrastructure.database import encode
 

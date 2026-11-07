@@ -4,10 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from pydantic import ValidationError
 
+from arena.application.service import ConflictError
 from arena.domain.catalog import PRODUCTS
 from arena.domain.market import conditions, settle
 from arena.domain.models import Decision
-from arena.application.service import ConflictError
 
 
 def test_settlement_money_inventory_and_idempotency(client, arena_config):

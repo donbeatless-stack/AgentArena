@@ -1,22 +1,22 @@
+import copy
 import json
 import statistics
 import threading
-import copy
 from collections import defaultdict
 
-from arena.domain.catalog import COLORS, MERCHANT_NAMES, PRODUCTS
-from arena.infrastructure.database import encode
-from arena.domain.market import conditions, settle
-from arena.domain.models import ArenaInput, ExperimentVariant, MerchantInput
-from arena.execution.tasks import TaskStore
-from arena.evaluation.metrics import evaluate_experiment
 from arena.agents.approval import ApprovalCoordinator
 from arena.agents.memory import ExperienceStore
 from arena.agents.negotiation import Negotiator
 from arena.agents.tool_records import tool_records
+from arena.domain.catalog import COLORS, PRODUCTS
+from arena.domain.market import conditions, settle
+from arena.domain.models import ArenaInput, ExperimentVariant, MerchantInput
 from arena.domain.procurement import POLICY, allocate_orders, purchase_outcomes
-from arena.infrastructure.events import EventStore, event_scope
+from arena.evaluation.metrics import evaluate_experiment
 from arena.execution.context import current_job
+from arena.execution.tasks import TaskStore
+from arena.infrastructure.database import encode
+from arena.infrastructure.events import EventStore, event_scope
 
 
 class ConflictError(Exception):
@@ -125,11 +125,12 @@ class ArenaService:
                         TaskStore.assert_lease(connection, job)
                 observation = self.observation(arena, previous, merchant, market)
                 config = configs[merchant["id"]]
-                def sink(node, status, label, payload):
+                # Bind the merchant id now; a late-binding closure would misattribute events if sinks ever outlive the loop.
+                def sink(node, status, label, payload, merchant_id=merchant["id"]):
                     with self.db.connect() as conn:
                         if job:
                             TaskStore.assert_lease(conn, job)
-                        self.events.append(arena_id, number, merchant["id"], node, status, label, payload, connection=conn)
+                        self.events.append(arena_id, number, merchant_id, node, status, label, payload, connection=conn)
                 token = current_job.set(job)
                 try:
                     with event_scope(sink):

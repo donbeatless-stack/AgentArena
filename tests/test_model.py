@@ -1,13 +1,13 @@
 import json
+import sys
 import threading
 import time
-import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from arena.domain.models import Decision
 from arena.cli.live_test import main as live_test
+from arena.domain.models import Decision
 
 
 def sample_plan():

@@ -5,7 +5,7 @@ import getpass
 import json
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -14,8 +14,8 @@ from langchain_core.messages import AIMessage, ToolMessage
 
 from arena.api.app import create_app
 from arena.domain.models import Decision
-from arena.infrastructure.database import Database
 from arena.infrastructure.config import DATA_DIR
+from arena.infrastructure.database import Database
 
 
 def main():
@@ -126,7 +126,7 @@ def main():
                 starting_cash = next(item["cash"] for item in initial["merchants"] if item["id"] == merchant["id"])
                 assert starting_cash + sum(item["amount"] for item in entries) == merchant["cash"]
             report = {
-                "tested_at": datetime.now(timezone.utc).isoformat(), "provider": args.base_url,
+                "tested_at": datetime.now(UTC).isoformat(), "provider": args.base_url,
                 "model": models[0] if len(models) == 1 else "mixed", "models": models, "thinking": args.thinking, "workflow": args.workflow, "rounds": args.steps, "status": arena["status"],
                 "duration_seconds": round(time.monotonic() - started, 2),
                 "input_tokens": sum(item["input_tokens"] for item in decisions),

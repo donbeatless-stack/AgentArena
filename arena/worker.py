@@ -5,10 +5,10 @@ import asyncio
 import time
 
 from arena.agents.engine import AgentEngine
+from arena.application.service import ArenaService
+from arena.execution.runner import Runner
 from arena.infrastructure.config import DATA_DIR, REDIS_URL
 from arena.infrastructure.database import Database
-from arena.execution.runner import Runner
-from arena.application.service import ArenaService
 
 
 async def run(args):

@@ -1,6 +1,6 @@
+import json
 import sqlite3
 import time
-import json
 from pathlib import Path
 from typing import TypedDict
 
@@ -8,20 +8,20 @@ from langchain.agents import create_agent
 from langchain.agents.structured_output import ToolStrategy
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
-from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
-from arena.domain.models import CandidatePlans, Decision, PlanReview, ProductAction, RoutingPlan
+from arena.agents.approval import ApprovalRequired
 from arena.agents.context import decision_context, market_facts, store_facts
-from arena.agents.providers import build_model, is_deepseek
-from arena.domain.simulation import budget_plan, simulate_plan
-from arena.domain.procurement import POLICY
 from arena.agents.middleware import bounded_tools, budgeted_execution, tool_budget
+from arena.agents.providers import build_model, is_deepseek
 from arena.agents.structured import parse_model_response, role_call
 from arena.agents.tool_records import tool_records
-from arena.agents.approval import ApprovalRequired
+from arena.domain.models import CandidatePlans, Decision, PlanReview, ProductAction, RoutingPlan
+from arena.domain.procurement import POLICY
+from arena.domain.simulation import budget_plan, simulate_plan
 from arena.infrastructure.events import emit
 from arena.infrastructure.storage_permissions import prepare_sqlite_files
 

@@ -1,5 +1,5 @@
-import statistics
 import json
+import statistics
 
 from arena.agents.tool_records import BUDGET_EXHAUSTED
 from arena.evaluation.metrics import confidence_interval

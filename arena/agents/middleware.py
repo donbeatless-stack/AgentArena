@@ -2,12 +2,13 @@
 
 from collections import Counter
 from collections.abc import Callable
+from contextvars import ContextVar
 
 from langchain.agents.middleware import ModelRequest, ModelResponse, wrap_model_call, wrap_tool_call
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from contextvars import ContextVar
-from arena.infrastructure.events import emit
+
 from arena.agents.tool_records import BUDGET_EXHAUSTED
+from arena.infrastructure.events import emit
 
 tool_budget = ContextVar("arena_tool_budget", default=6)
 

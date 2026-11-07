@@ -2,8 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from arena.api.app import create_app
-from tests.test_model import model_server
 from arena.infrastructure.config import MODEL_DEFAULTS
+from tests.test_model import model_server  # noqa: F401  (re-exported pytest fixture)
 
 
 @pytest.fixture(autouse=True)

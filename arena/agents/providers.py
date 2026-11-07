@@ -94,7 +94,6 @@ def test_connection(config):
     response = model.bind_tools([schema]).invoke(messages)
     if not response.tool_calls or response.tool_calls[0]["name"] != "connection_probe":
         raise ValueError("模型连接成功，但未完成工具调用；请检查该模型是否支持 Function Calling")
-    call = response.tool_calls[0]
     messages.append(response)
     for item in response.tool_calls:
         messages.append(ToolMessage(content=json.dumps({"status": "ok"}), tool_call_id=item["id"]))

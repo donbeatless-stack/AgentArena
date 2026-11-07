@@ -1,8 +1,8 @@
 """Bounded selection on development outcomes, followed by untouched validation seeds."""
 
 from arena.domain.models import ExperimentInput, ExperimentVariant
-from arena.infrastructure.database import encode
 from arena.domain.procurement import LEGACY_POLICY
+from arena.infrastructure.database import encode
 
 
 def select_and_validate(service, experiment_id, request):

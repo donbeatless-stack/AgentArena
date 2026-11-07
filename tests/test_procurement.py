@@ -7,12 +7,11 @@ import pytest
 
 from arena.agents.engine import rule_decision
 from arena.domain.market import settle
-from arena.domain.models import ArenaInput
-from arena.domain.models import ExperimentInput
+from arena.domain.models import ArenaInput, ExperimentInput
 from arena.domain.procurement import LEGACY_POLICY, POLICY, allocate_orders
 from arena.domain.simulation import simulate_plan
 from tests.test_decision_upgrade import configured
-from tests.test_model import configure, ModelHandler
+from tests.test_model import ModelHandler, configure
 
 
 def example(client, arena_config, quantities=(100, 80, 60), supply=120):

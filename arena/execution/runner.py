@@ -8,10 +8,10 @@ from openai import APIConnectionError, APIStatusError, APITimeoutError
 from redis.asyncio import Redis
 from redis.exceptions import RedisError, ResponseError
 
+from arena.agents.approval import ApprovalRequired
 from arena.agents.providers import model_error
 from arena.application.service import ConflictError
 from arena.execution.tasks import LeaseLost, TaskStore
-from arena.agents.approval import ApprovalRequired
 
 
 class Runner:

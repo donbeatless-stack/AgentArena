@@ -13,14 +13,26 @@ from langgraph.errors import GraphRecursionError
 from openai import APIError
 
 from arena.agents.engine import AgentEngine
+from arena.agents.providers import model_error as provider_error, test_connection
+from arena.application.service import ArenaService, ConflictError
 from arena.domain.catalog import COLORS, MERCHANT_NAMES, PRODUCTS, SCENARIOS
+from arena.domain.models import (
+    AdvanceInput,
+    ApprovalInput,
+    ArenaInput,
+    ExperimentInput,
+    ForkInput,
+    MerchantInput,
+    ModelProfileInput,
+    ModelSettings,
+    RunInput,
+    SelectionInput,
+    StrategyInput,
+)
+from arena.evaluation.selection import select_and_validate
+from arena.execution.runner import Runner
 from arena.infrastructure.config import DATA_DIR, EXECUTION_MODE, PROJECT_ROOT, REDIS_URL
 from arena.infrastructure.database import Database, encode
-from arena.domain.models import AdvanceInput, ArenaInput, ExperimentInput, MerchantInput, ModelProfileInput, ModelSettings, RunInput, StrategyInput, ApprovalInput, ForkInput, SelectionInput
-from arena.evaluation.selection import select_and_validate
-from arena.agents.providers import model_error as provider_error, test_connection
-from arena.execution.runner import Runner
-from arena.application.service import ArenaService, ConflictError
 
 
 def create_app(data_dir: Path = DATA_DIR, seed_demo: bool = True, redis_url: str = REDIS_URL, execution_mode: str = EXECUTION_MODE):

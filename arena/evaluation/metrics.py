@@ -4,8 +4,8 @@ import json
 import math
 import statistics
 from collections import defaultdict
-from arena.agents.tool_records import tool_records
 
+from arena.agents.tool_records import tool_records
 
 T_CRITICAL = [0, 12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262,
               2.228, 2.201, 2.179, 2.160, 2.145, 2.131, 2.120, 2.110, 2.101, 2.093,

@@ -6,8 +6,8 @@ import json
 from arena.agents.structured import role_call
 from arena.domain.models import NegotiationAction
 from arena.domain.procurement import POLICY
-from arena.execution.tasks import TaskStore
 from arena.execution.context import current_job
+from arena.execution.tasks import TaskStore
 from arena.infrastructure.database import encode
 from arena.infrastructure.events import emit
 

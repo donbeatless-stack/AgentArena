@@ -4,8 +4,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from arena.domain.catalog import STRATEGIES
-from arena.infrastructure.config import MODEL_DEFAULTS
 from arena.domain.models import ModelSettings
+from arena.infrastructure.config import MODEL_DEFAULTS
 from arena.infrastructure.storage_permissions import prepare_sqlite_files
 
 
