@@ -14,8 +14,8 @@ test-results/
 # Local credentials for explicit live checks.
 key.txt
 
-# This standalone repository publishes README only; keep other documentation local.
-/docs/
+# Publish the READMEs and docs/images only; keep other documentation local.
+/docs/*
 /doc/
 /documentation/
 *.md
@@ -27,6 +27,8 @@ key.txt
 *.ppt
 *.pptx
 !/README.md
+!/README.zh-CN.md
+!/docs/images/
 
 # Local storage, backups, credentials and editor files.
 .env.*
