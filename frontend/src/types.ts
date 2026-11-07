@@ -125,6 +125,7 @@ export interface ArenaBase {
   created_at: string;
   updated_at: string;
   experiment_id: number | null;
+  language?: "en" | "zh";
 }
 export interface ArenaSummary extends ArenaBase {
   merchants: Merchant[];
@@ -202,6 +203,7 @@ export interface ArenaInput {
   initial_capital: number;
   merchants: MerchantInput[];
   approval_policy?: "off" | "risk" | "all";
+  language?: "en" | "zh";
 }
 export interface LedgerEntry {
   id: number;
@@ -304,6 +306,7 @@ export interface Experiment {
     mode: Mode;
     split?: "development" | "holdout";
     variants?: ExperimentVariant[];
+    language?: "en" | "zh";
   };
   created_at: string;
   arenas: ArenaSummary[];

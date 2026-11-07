@@ -8,6 +8,7 @@ from arena.domain.market import conditions
 from arena.domain.models import Decision
 from arena.infrastructure.database import encode
 from arena.infrastructure.events import emit
+from arena.locales import language_of, tr
 
 
 class ApprovalRequired(Exception):
@@ -68,7 +69,7 @@ class ApprovalCoordinator:
             emit("approval", "rejected", "人工退回重新规划", reason=response.get("reason", ""))
             revisions = state.get("human_revisions", 0) + 1
             if revisions > 3:
-                raise ValueError("人工退回超过三次，请创建新的分叉运行")
+                raise ValueError(tr("approval.too_many", language_of(obs)))
             with self.db.connect() as conn:
                 conn.execute(
                     "UPDATE approvals SET state='replanning',version=version+1,response=NULL,resolved_at=NULL WHERE id=?",
@@ -78,7 +79,13 @@ class ApprovalCoordinator:
                 "human_action": "reject",
                 "human_revisions": revisions,
                 "reviews": state.get("reviews", [])
-                + [{"approved": False, "issues": [response.get("reason") or "人工要求重新规划"], "reason": "人工退回"}],
+                + [
+                    {
+                        "approved": False,
+                        "issues": [response.get("reason") or tr("approval.replan", language_of(obs))],
+                        "reason": tr("approval.rejected", language_of(obs)),
+                    }
+                ],
                 "revisions": state.get("revisions", 0) + 1,
             }
         decision = Decision.model_validate(response["plan"]).model_dump() if action == "modify" else state["decision"]

@@ -4,24 +4,29 @@ import math
 
 from arena.domain.models import Decision
 from arena.domain.procurement import POLICY
+from arena.locales import PRODUCT_NAMES_EN, language_of, tr
 
 
 def simulate_plan(observation, plan):
     decision = Decision.model_validate(plan)
     store, market = observation["store"], observation["market"]
     shared = observation.get("supply_policy") == POLICY
+    language = language_of(observation)
     products = {item["id"]: item for item in market["products"]}
     inventory = {item["product_id"]: item for item in store["inventory"]}
     purchase_cost = sum(item.purchase_quantity * products[item.product_id]["cost"] for item in decision.products)
     requested = purchase_cost + decision.marketing_budget + market["rent"]
     risks = []
     if requested > store["cash"]:
-        risks.append(f"采购、营销及租金合计 ¥{requested / 100:.2f}，超过当前现金 ¥{store['cash'] / 100:.2f}")
+        risks.append(
+            tr("projection.over_cash", language, requested=f"{requested / 100:.2f}", cash=f"{store['cash'] / 100:.2f}")
+        )
     for item in decision.products:
         if item.purchase_quantity > products[item.product_id]["supply"]:
-            risks.append(f"{products[item.product_id]['name']}计划采购超过市场总供应")
+            name = PRODUCT_NAMES_EN[item.product_id] if language == "en" else products[item.product_id]["name"]
+            risks.append(tr("projection.over_supply", language, product=name))
     scenarios = []
-    for label, multiplier in [("低需求", 0.7), ("基准需求", 1.0), ("高需求", 1.2)]:
+    for scenario, multiplier in [("low", 0.7), ("base", 1.0), ("high", 1.2)]:
         cash = store["cash"]
         revenue = cogs = holding = sold = leftover = 0
         for item in decision.products:
@@ -32,7 +37,7 @@ def simulate_plan(observation, plan):
                 rival_demand = (
                     product["demand"] / observation["merchant_count"] * max(0, observation["merchant_count"] - 1)
                 )
-                rival_demand *= 1.3 if label == "低需求" else 0.7 if label == "高需求" else 1
+                rival_demand *= 1.3 if scenario == "low" else 0.7 if scenario == "high" else 1
                 total_orders = item.purchase_quantity + rival_demand
                 if total_orders > supply:
                     supply = int(supply * item.purchase_quantity / total_orders)
@@ -64,7 +69,7 @@ def simulate_plan(observation, plan):
         closing_cash = max(0, cash - advertising + revenue - fees)
         scenarios.append(
             {
-                "name": label,
+                "name": tr("projection." + scenario, language),
                 "profit": revenue - cogs - advertising - fees,
                 "cash": closing_cash,
                 "revenue": revenue,
@@ -74,7 +79,7 @@ def simulate_plan(observation, plan):
         )
     worst = min(item["cash"] for item in scenarios)
     if worst < market["rent"] * 2:
-        risks.append("低需求情景下现金缓冲不足两轮租金")
+        risks.append(tr("projection.thin_buffer", language))
     expected = scenarios[1]["profit"]
     downside = min(item["profit"] for item in scenarios)
     return {
@@ -84,9 +89,9 @@ def simulate_plan(observation, plan):
         "purchase_cost": purchase_cost,
         "risks": risks,
         "scenarios": scenarios,
-        "supply_assumption": "按公开需求估计其他商店订单并比例分货；协商成功与进价尚不确定，实际到货可能更少"
-        if shared
-        else "按旧版轮换采购规则估算",
+        "supply_assumption": tr(
+            "projection.assumption_shared" if shared else "projection.assumption_rotating", language
+        ),
     }
 
 

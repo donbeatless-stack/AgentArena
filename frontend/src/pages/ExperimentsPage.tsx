@@ -32,7 +32,7 @@ import {
   StatusBadge,
   useToast,
 } from "../components/ui";
-import { locale, st, t } from "../i18n";
+import { getLang, locale, st, t, type Lang } from "../i18n";
 
 export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
   const { data, error, reload } = useResource<Experiment[]>("/experiments");
@@ -52,6 +52,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
   const [mode, setMode] = useState<Mode>("rule");
   const [comparison, setComparison] = useState(false);
   const [split, setSplit] = useState("holdout");
+  const [language, setLanguage] = useState<Lang>(getLang);
   const [variants, setVariants] = useState<ExperimentVariant[]>([
     {
       name: t("Standard decision"),
@@ -457,6 +458,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                   strategy_ids: strategyIds,
                   mode,
                   split,
+                  language,
                   ...(comparison ? { variants, strategy_ids: [] } : {}),
                 }),
               });
@@ -544,6 +546,17 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                 onChange={(event) => setSeeds(event.target.value)}
                 placeholder="11, 23, 37"
               />
+            </label>
+            <label className="field">
+              {t("Agent language")}
+              <select
+                aria-label={t("Agent language")}
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Lang)}
+              >
+                <option value="en">{t("English")}</option>
+                <option value="zh">{t("Chinese")}</option>
+              </select>
             </label>
             <label className="field">
               {t("Data split")}

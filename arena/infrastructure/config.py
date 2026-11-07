@@ -10,6 +10,8 @@ REDIS_URL = os.environ.get("REDIS_URL", "")
 HOST = os.environ.get("ARENA_HOST", "127.0.0.1")
 PORT = int(os.environ.get("ARENA_PORT", "8010"))
 EXECUTION_MODE = os.environ.get("ARENA_EXECUTION", "embedded")
+# Language of the demo matches seeded on first launch ("en" or "zh").
+DEMO_LANGUAGE = "zh" if os.environ.get("ARENA_DEMO_LANGUAGE", "en").lower().startswith("zh") else "en"
 
 MODEL_DEFAULTS = {
     "base_url": os.environ.get("MODEL_BASE_URL", "https://api.openai.com/v1"),

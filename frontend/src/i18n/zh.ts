@@ -577,4 +577,12 @@ export const ZH: Record<string, string> = {
   "Create and run": "创建并运行",
   // 18_polish
   "Round profit": "本轮净收益",
+  // 19_language
+  "Agent language": "Agent 语言",
+  "English": "英文",
+  "Chinese": "中文",
+  "Prompts and agent output use this language; it can't change after the match starts.": "Prompt 与 Agent 输出使用该语言，开赛后不可更改。",
+  "Language of prompts and agent output": "Prompt 与 Agent 输出的语言",
+  "Chinese content": "中文内容",
+  "English content": "英文内容",
 };

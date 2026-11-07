@@ -305,8 +305,11 @@ def test_provider_failure_pauses_without_fake_decisions_or_ledger(client, arena_
 def test_live_check_exports_replay_and_verifies_ledger(tmp_path, model_server, monkeypatch):
     report = tmp_path / "live-report.json"
     monkeypatch.setenv("LIVE_MODEL_API_KEY", "llm-test-secret")
+    # The fake model replies in Chinese, so exercise the Chinese match path.
     monkeypatch.setattr(
-        sys, "argv", ["live_test", "--base-url", model_server, "--model", "arena-test", "--report", str(report)]
+        sys,
+        "argv",
+        ["live_test", "--base-url", model_server, "--model", "arena-test", "--language", "zh", "--report", str(report)],
     )
     live_test()
     result = json.loads(report.read_text(encoding="utf-8"))

@@ -17,6 +17,7 @@ from arena.execution.context import current_job
 from arena.execution.tasks import TaskStore
 from arena.infrastructure.database import encode
 from arena.infrastructure.events import EventStore, event_scope
+from arena.locales import LEGACY_LANGUAGE, localize, localize_market, localize_strategy, product_name, tr
 
 
 class ConflictError(Exception):
@@ -38,11 +39,14 @@ class ArenaService:
     def create(
         self, config: ArenaInput, experiment_id=None, strategy_configs=None, model_configs=None, supply_policy=POLICY
     ):
-        strategies = (
-            strategy_configs
-            if strategy_configs is not None
-            else {item.strategy_id: self.db.strategy(item.strategy_id) for item in config.merchants}
-        )
+        strategies = {
+            strategy_id: localize_strategy(strategy, config.language)
+            for strategy_id, strategy in (
+                strategy_configs
+                if strategy_configs is not None
+                else {item.strategy_id: self.db.strategy(item.strategy_id) for item in config.merchants}
+            ).items()
+        }
         models = (
             model_configs
             if model_configs is not None
@@ -54,7 +58,7 @@ class ArenaService:
         )
         with self.db.connect() as connection:
             cursor = connection.execute(
-                "INSERT INTO arenas(name,scenario,seed,total_rounds,initial_capital,experiment_id,approval_policy,supply_policy) VALUES(?,?,?,?,?,?,?,?)",
+                "INSERT INTO arenas(name,scenario,seed,total_rounds,initial_capital,experiment_id,approval_policy,supply_policy,language) VALUES(?,?,?,?,?,?,?,?,?)",
                 (
                     config.name,
                     config.scenario,
@@ -64,6 +68,7 @@ class ArenaService:
                     experiment_id,
                     config.approval_policy,
                     supply_policy,
+                    config.language,
                 ),
             )
             arena_id = cursor.lastrowid
@@ -94,7 +99,7 @@ class ArenaService:
                 for product in PRODUCTS:
                     stock = {
                         "product_id": product["id"],
-                        "name": product["name"],
+                        "name": product_name(product, config.language),
                         "quantity": product["initial_stock"],
                         "book_value": product["initial_stock"] * product["cost"],
                         "price": product["reference_price"],
@@ -142,7 +147,7 @@ class ArenaService:
                 )
             snapshot = {
                 "round": 0,
-                "market": conditions(config.scenario, config.seed, 1),
+                "market": localize_market(conditions(config.scenario, config.seed, 1), config.language),
                 "merchants": merchants,
                 "totals": {"revenue": 0, "sold": 0, "demand": 0, "profit": 0},
             }
@@ -185,7 +190,9 @@ class ArenaService:
             store["memory"] = ""
             history = []
         experiences = (
-            self.memory.recall(arena["id"], merchant["id"], market["round"], market, store)
+            self.memory.recall(
+                arena["id"], merchant["id"], market["round"], market, store, language=arena.get("language", "zh")
+            )
             if options.get("memory") == "episodic"
             else []
         )
@@ -197,6 +204,7 @@ class ArenaService:
             "arena_id": arena["id"],
             "supply_policy": arena["supply_policy"],
             "approval_policy": arena.get("approval_policy", "off"),
+            "language": arena.get("language", LEGACY_LANGUAGE),
             "agent_options": options,
             "experiences": experiences,
             "merchant_count": len(previous["merchants"]),
@@ -212,7 +220,7 @@ class ArenaService:
                 raise ConflictError("比赛已结束")
             previous = self.db.snapshot(arena_id)
             number = arena["current_round"] + 1
-            market = conditions(arena["scenario"], arena["seed"], number)
+            market = localize_market(conditions(arena["scenario"], arena["seed"], number), arena["language"])
             with self.db.connect() as connection:
                 rows = connection.execute(
                     "SELECT id,strategy_config,model_config,workflow FROM merchants WHERE arena_id=? ORDER BY slot",
@@ -331,7 +339,7 @@ class ArenaService:
                         merchant["id"],
                         "settle",
                         "completed",
-                        "经营结果已结算",
+                        localize("经营结果已结算", arena.get("language", LEGACY_LANGUAGE)),
                         {
                             "merchant": merchant,
                             "metrics": merchant["metrics"],
@@ -498,7 +506,8 @@ class ArenaService:
         }
         return self.create(
             ArenaInput(
-                name=arena["name"][:50] + " · 再赛",
+                name=arena["name"][:50] + tr("name.rematch", arena["language"]),
+                language=arena["language"],
                 scenario=arena["scenario"],
                 total_rounds=arena["total_rounds"],
                 seed=arena["seed"],
@@ -545,7 +554,8 @@ class ArenaService:
         }
         fork = self.create(
             ArenaInput(
-                name=source["name"][:40] + f" · 第{number}轮分叉",
+                name=source["name"][:40] + tr("name.fork", source["language"], round=number),
+                language=source["language"],
                 scenario=source["scenario"],
                 seed=source["seed"],
                 total_rounds=source["total_rounds"],
@@ -744,7 +754,7 @@ class ArenaService:
                     raise ValueError("开发集与保留集不能共用种子：" + ", ".join(str(seed) for seed in sorted(overlap)))
         variants = config.variants or [
             ExperimentVariant(
-                name=self.db.strategy(strategy_id)["name"],
+                name=localize_strategy(self.db.strategy(strategy_id), config.language)["name"],
                 strategy_id=strategy_id,
                 mode=config.mode,
                 model_profile_id=config.model_profile_id,
@@ -802,6 +812,7 @@ class ArenaService:
                     total_rounds=config.rounds,
                     seed=seed,
                     merchants=merchants,
+                    language=config.language,
                 ),
                 experiment_id,
                 strategy_configs,

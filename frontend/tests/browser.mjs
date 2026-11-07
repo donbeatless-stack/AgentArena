@@ -619,6 +619,7 @@ try {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "人工审批验收",
+          language: "zh",
           total_rounds: 3,
           approval_policy: "all",
           merchants: [
@@ -701,6 +702,7 @@ try {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "四店全景验收",
+          language: "zh",
           total_rounds: 3,
           seed: 83,
           merchants: [
@@ -874,6 +876,7 @@ try {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "能力开发集验收",
+          language: "zh",
           scenario: "festival",
           rounds: 3,
           seeds: [1711],

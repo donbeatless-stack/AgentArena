@@ -10,25 +10,28 @@ from pydantic import BaseModel, ValidationError
 
 from arena.agents.providers import build_model, is_deepseek
 from arena.infrastructure.events import emit
+from arena.locales import current_language, localize_schema, tr
 
 ResponseModel = TypeVar("ResponseModel", bound=BaseModel)
 
 
-def parse_model_response(schema: type[ResponseModel], content: str, role: str) -> ResponseModel:
+def parse_model_response(schema: type[ResponseModel], content: str, role: str, language=None) -> ResponseModel:
     """Read one complete JSON value; never repair incomplete or invalid business data."""
+    language = language or current_language()
     text = content.lstrip()
     try:
         data, end = json.JSONDecoder().raw_decode(text)
     except json.JSONDecodeError as error:
-        raise ValueError("模型回复的 JSON 不完整或格式有误，本轮尚未结算") from error
+        raise ValueError(tr("parse.malformed", language)) from error
     try:
         value = schema.model_validate(data)
     except ValidationError as error:
         fields = [
-            ".".join(str(part) for part in item["loc"]) or "整体结构"
+            ".".join(str(part) for part in item["loc"]) or tr("parse.root", language)
             for item in error.errors(include_input=False, include_url=False)
         ]
-        raise ValueError("模型回复未通过数据校验，本轮尚未结算；请检查：" + "、".join(fields[:3])) from error
+        separator = tr("parse.field_separator", language)
+        raise ValueError(tr("parse.invalid", language, fields=separator.join(fields[:3]))) from error
     if text[end:].strip():
         emit(
             role,
@@ -40,11 +43,12 @@ def parse_model_response(schema: type[ResponseModel], content: str, role: str) -
     return value
 
 
-def role_call(settings, schema, system, data, thread_id, checkpointer, role):
+def role_call(settings, schema, system, data, thread_id, checkpointer, role, language=None):
+    language = language or current_language()
     native = is_deepseek(settings)
     prompt = system + (
-        "\n仅返回符合以下 JSON Schema 的一个 JSON 对象，结束后不要追加评语或其他内容："
-        + json.dumps(schema.model_json_schema(), ensure_ascii=False)
+        tr("prompt.json_only_line", language)
+        + json.dumps(localize_schema(schema.model_json_schema(), language), ensure_ascii=False)
         if native
         else ""
     )
@@ -66,7 +70,7 @@ def role_call(settings, schema, system, data, thread_id, checkpointer, role):
         )
     )
     value = (
-        parse_model_response(schema, response["messages"][-1].content, role)
+        parse_model_response(schema, response["messages"][-1].content, role, language)
         if native
         else response["structured_response"]
     )

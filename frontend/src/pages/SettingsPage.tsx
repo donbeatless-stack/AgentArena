@@ -403,7 +403,12 @@ export function SettingsPage() {
                     try {
                       const copied = await api<ModelProfile>(
                         `/model-profiles/${form.id}/copy`,
-                        { method: "POST" },
+                        {
+                          method: "POST",
+                          body: JSON.stringify({
+                            name: (st(form.name) + t(" · copy")).slice(0, 60),
+                          }),
+                        },
                       );
                       profiles.setData((items) => [...(items || []), copied]);
                       setSelected(copied.id);

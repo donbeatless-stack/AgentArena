@@ -31,4 +31,6 @@ def arena_config():
             {"name": "橙子补给", "strategy_id": "discount", "mode": "rule", "color": "orange"},
             {"name": "青禾市集", "strategy_id": "premium", "mode": "rule", "color": "teal"},
         ],
+        # Existing assertions check Chinese match content; English matches have their own tests.
+        "language": "zh",
     }

@@ -147,6 +147,9 @@ export function ArenaPage() {
             <StatusBadge status={latest.status} />
             <span>{st(snapshot.market.scenario_name)}</span>
             <span>{t("Seed {seed}", { seed: arena.seed })}</span>
+            <span title={t("Language of prompts and agent output")}>
+              {arena.language === "zh" ? t("Chinese content") : t("English content")}
+            </span>
             <span>{t("{count} stores", { count: snapshot.merchants.length })}</span>
           </div>
         </div>

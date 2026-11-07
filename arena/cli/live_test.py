@@ -4,6 +4,7 @@ import argparse
 import getpass
 import json
 import os
+import re
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,12 +35,20 @@ def main():
         "--workspace-key", action="store_true", help="Use the saved default connection key without printing it"
     )
     parser.add_argument("--steps", type=int, choices=[1, 2, 3], default=3)
+    parser.add_argument("--language", choices=["en", "zh"], default="en", help="Language of prompts and agent output")
     parser.add_argument("--report", type=Path, default=Path("test-results/live-model-report.json"))
     args = parser.parse_args()
     if args.key_file:
         api_key = args.key_file.read_text(encoding="utf-8").strip()
     elif args.workspace_key:
-        api_key = Database(DATA_DIR).model_settings()["api_key"]
+        # Prefer the default connection, then any saved connection that has a key.
+        database = Database(DATA_DIR)
+        profile_ids = ["default"] + [item["id"] for item in database.model_profiles()]
+        api_key = next(
+            (key for key in (database.model_settings(item).get("api_key") for item in profile_ids) if key), ""
+        )
+        if not api_key:
+            parser.error("No saved model connection has an API key; add one under Settings first")
     else:
         api_key = os.environ.get("LIVE_MODEL_API_KEY") or getpass.getpass("Model API key: ")
     models = args.models.split(",") if args.models else [args.model]
@@ -70,7 +79,7 @@ def main():
                 response.raise_for_status()
                 merchants.append(
                     {
-                        "name": f"模型商店 {index + 1}",
+                        "name": f"Model store {index + 1}" if args.language == "en" else f"模型商店 {index + 1}",
                         "strategy_id": "adaptive",
                         "mode": "llm",
                         "color": ["violet", "orange", "teal", "blue"][index],
@@ -84,9 +93,17 @@ def main():
                     }
                 )
             if len(merchants) == 1:
-                merchants.append({"name": "规则商店", "strategy_id": "balanced", "mode": "rule", "color": "teal"})
+                merchants.append(
+                    {
+                        "name": "Rule store" if args.language == "en" else "规则商店",
+                        "strategy_id": "balanced",
+                        "mode": "rule",
+                        "color": "teal",
+                    }
+                )
             config = {
-                "name": "真实模型验收",
+                "name": "Live model check" if args.language == "en" else "真实模型验收",
+                "language": args.language,
                 "scenario": "festival",
                 "seed": 73,
                 "total_rounds": 3,
@@ -186,6 +203,9 @@ def main():
                         assert (
                             len(decision["trace"]["candidates"]) >= 2 and decision["trace"]["reviews"][-1]["approved"]
                         )
+                    if args.language == "en":
+                        written = decision["plan"]["summary"] + decision["plan"]["memory"]
+                        assert not re.search(r"[一-鿿]", written), f"Model wrote non-English text: {written}"
                     decisions.append(decision)
                     print(
                         f"Round {number + 1}: {decision['model_config']['model']} settled; tokens {decision['input_tokens']} + {decision['output_tokens']}",
@@ -214,6 +234,7 @@ def main():
                 "models": models,
                 "thinking": args.thinking,
                 "workflow": args.workflow,
+                "language": args.language,
                 "rounds": args.steps,
                 "status": arena["status"],
                 "duration_seconds": round(time.monotonic() - started, 2),

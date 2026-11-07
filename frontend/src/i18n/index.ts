@@ -2,6 +2,10 @@ import { useSyncExternalStore } from "react";
 import { ZH } from "./zh";
 import { SERVER_EN } from "./server";
 
+const SERVER_ZH: Record<string, string> = Object.fromEntries(
+  Object.entries(SERVER_EN).map(([zh, en]) => [en, zh]),
+);
+
 /**
  * Minimal gettext-style i18n.
  *
@@ -101,10 +105,13 @@ export function t(text: string, vars?: Vars): string {
   return fill(translated ?? text, vars);
 }
 
-/** Translate a known server-provided Chinese string for the English UI. */
+/**
+ * Translate a known fixed string from the server into the UI language. Matches store
+ * content in their own language, so this maps both ways; free text passes through.
+ */
 export function st(text: string | null | undefined): string {
   if (!text) return text ?? "";
-  return current === "en" ? (SERVER_EN[text] ?? text) : text;
+  return current === "en" ? (SERVER_EN[text] ?? text) : (SERVER_ZH[text] ?? text);
 }
 
 /** BCP 47 locale for number and date formatting. */

@@ -13,7 +13,7 @@ import type {
 } from "../types";
 import { Avatar, Button, Modal, useToast } from "./ui";
 import { AgentOptionsFields } from "../features/decisions/AgentOptionsFields";
-import { st, t } from "../i18n";
+import { getLang, st, t, type Lang } from "../i18n";
 
 const INITIAL: ArenaInput = {
   name: "New business match",
@@ -58,6 +58,7 @@ function initialForm(): ArenaInput {
   const form = structuredClone(INITIAL);
   return {
     ...form,
+    language: getLang(),
     name: t(form.name),
     merchants: form.merchants.map((merchant) => ({
       ...merchant,
@@ -207,6 +208,22 @@ export function CreateArena({
               />
             </label>
           </div>
+          <label className="field">
+            {t("Agent language")}
+            <select
+              aria-label={t("Agent language")}
+              value={form.language ?? getLang()}
+              onChange={(event) =>
+                setForm({ ...form, language: event.target.value as Lang })
+              }
+            >
+              <option value="en">{t("English")}</option>
+              <option value="zh">{t("Chinese")}</option>
+            </select>
+            <small className="field-hint">
+              {t("Prompts and agent output use this language; it can't change after the match starts.")}
+            </small>
+          </label>
           <div className="section-label">
             {t("Stores")}
             <span>{form.merchants.length} / 4</span>

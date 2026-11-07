@@ -159,6 +159,7 @@ class Database:
                     "parent_arena_id": "INTEGER",
                     "fork_round": "INTEGER",
                     "supply_policy": "TEXT NOT NULL DEFAULT 'sequential_v1'",
+                    "language": "TEXT NOT NULL DEFAULT 'zh'",
                 },
                 "approvals": {"version": "INTEGER NOT NULL DEFAULT 0"},
             }
@@ -170,7 +171,8 @@ class Database:
             legacy = json.loads(connection.execute("SELECT value FROM settings WHERE key='model'").fetchone()[0])
             config = ModelSettings.model_validate(legacy).model_dump()
             connection.execute(
-                "INSERT OR IGNORE INTO model_profiles(id,name,config) VALUES('default','默认连接',?)", (encode(config),)
+                "INSERT OR IGNORE INTO model_profiles(id,name,config) VALUES('default','Default connection',?)",
+                (encode(config),),
             )
             connection.execute(
                 "UPDATE arenas SET status='paused' WHERE status IN ('running','stepping') AND NOT EXISTS (SELECT 1 FROM execution_jobs WHERE arena_id=arenas.id AND state IN ('queued','running'))"

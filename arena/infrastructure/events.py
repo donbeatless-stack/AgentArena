@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 
 from arena.infrastructure.database import encode
+from arena.locales import localize
 
 _sink: ContextVar[Callable | None] = ContextVar("arena_event_sink", default=None)
 
@@ -13,7 +14,7 @@ _sink: ContextVar[Callable | None] = ContextVar("arena_event_sink", default=None
 def emit(node: str, status: str, label: str, **payload):
     sink = _sink.get()
     if sink:
-        sink(node, status, label, payload)
+        sink(node, status, localize(label), payload)
 
 
 @contextmanager

@@ -30,7 +30,9 @@ def test_profiles_use_form_values_preserve_secrets_and_roundtrip_reasoning(clien
     assert client.put(f"/api/model-profiles/{saved['id']}", json=settings).json()["has_key"]
     assert client.post(f"/api/model-profiles/{saved['id']}/test", json=settings).status_code == 200
     copied = client.post(f"/api/model-profiles/{saved['id']}/copy").json()
-    assert copied["id"] != saved["id"] and copied["has_key"]
+    assert copied["id"] != saved["id"] and copied["has_key"] and copied["name"].endswith(" · copy")
+    named = client.post(f"/api/model-profiles/{saved['id']}/copy", json={"name": "Flash 副本"}).json()
+    assert named["name"] == "Flash 副本" and named["has_key"]
     assert "profile-secret" not in client.get("/api/model-profiles").text
 
 

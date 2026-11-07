@@ -3,13 +3,14 @@
 import json
 
 from arena.infrastructure.database import encode
+from arena.locales import LEGACY_LANGUAGE, tr
 
 
 class ExperienceStore:
     def __init__(self, database):
         self.db = database
 
-    def recall(self, arena_id, merchant_id, before_round, market, store, limit=3):
+    def recall(self, arena_id, merchant_id, before_round, market, store, limit=3, language=LEGACY_LANGUAGE):
         # No cross-match retrieval: development seeds and holdouts cannot contaminate each other.
         with self.db.connect() as conn:
             rows = conn.execute(
@@ -27,16 +28,16 @@ class ExperienceStore:
                 stock = sum(item["quantity"] for item in store["inventory"])
                 score += 1 / (1 + abs(context["stock_before"] - stock) / max(1, stock))
             outcome = json.loads(row["outcome"])
-            lesson = f"售出 {outcome['sold']} 件，余货 {outcome['inventory']} 件。"
+            lesson = tr("memory.sold", language, sold=outcome["sold"], inventory=outcome["inventory"])
             if outcome["missed"]:
-                lesson += f"{outcome['missed']} 个品类缺货，比较提高补货与提高价格的成本。"
+                lesson += tr("memory.missed", language, missed=outcome["missed"])
             else:
-                lesson += "没有品类缺货，结合余货评估补货规模。"
+                lesson += tr("memory.no_missed", language)
             if outcome["prediction_error"] is not None:
-                direction = "高估" if outcome["prediction_error"] < 0 else "低估"
-                lesson += (
-                    f"当时预测{direction}收益 {abs(outcome['prediction_error']) / 100:.2f} 元；检验本轮条件是否相似。"
-                )
+                direction = tr("memory.over" if outcome["prediction_error"] < 0 else "memory.under", language)
+                amount = f"{abs(outcome['prediction_error']) / 100:.2f}"
+                lesson += tr("memory.forecast", language, direction=direction, amount=amount)
+            lesson = lesson.strip()
             matches.append(
                 {
                     "evidence_id": row["id"],

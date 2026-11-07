@@ -20,6 +20,7 @@ from arena.domain.models import (
     AdvanceInput,
     ApprovalInput,
     ArenaInput,
+    CopyInput,
     ExperimentInput,
     ForkInput,
     MerchantInput,
@@ -31,8 +32,9 @@ from arena.domain.models import (
 )
 from arena.evaluation.selection import select_and_validate
 from arena.execution.runner import Runner
-from arena.infrastructure.config import DATA_DIR, EXECUTION_MODE, PROJECT_ROOT, REDIS_URL
+from arena.infrastructure.config import DATA_DIR, DEMO_LANGUAGE, EXECUTION_MODE, PROJECT_ROOT, REDIS_URL
 from arena.infrastructure.database import Database, encode
+from arena.locales import CSV_HEADERS, CSV_KINDS, LEGACY_LANGUAGE, MERCHANT_NAMES_EN
 
 
 def create_app(
@@ -50,17 +52,33 @@ def create_app(
         app.state.database, app.state.service, app.state.runner = database, service, runner
         await runner.open()
         if seed_demo and not service.listing():
+            english = DEMO_LANGUAGE == "en"
+            names = MERCHANT_NAMES_EN if english else MERCHANT_NAMES
             merchants = [
                 MerchantInput(name=name, strategy_id=strategy, color=color)
-                for name, strategy, color in zip(MERCHANT_NAMES, ["balanced", "discount", "premium"], COLORS)
+                for name, strategy, color in zip(names, ["balanced", "discount", "premium"], COLORS)
             ]
             demo = service.create(
-                ArenaInput(name="周末市集 · 揭幕战", scenario="festival", total_rounds=12, seed=42, merchants=merchants)
+                ArenaInput(
+                    name="Weekend Market · Opening Match" if english else "周末市集 · 揭幕战",
+                    scenario="festival",
+                    total_rounds=12,
+                    seed=42,
+                    merchants=merchants,
+                    language=DEMO_LANGUAGE,
+                )
             )
             for number in range(12):
                 await asyncio.to_thread(service.advance, demo["id"], number)
             service.create(
-                ArenaInput(name="街区新赛季", scenario="neighborhood", total_rounds=20, seed=2026, merchants=merchants)
+                ArenaInput(
+                    name="Neighborhood · New Season" if english else "街区新赛季",
+                    scenario="neighborhood",
+                    total_rounds=20,
+                    seed=2026,
+                    merchants=merchants,
+                    language=DEMO_LANGUAGE,
+                )
             )
         yield
         await runner.close()
@@ -215,8 +233,9 @@ def create_app(
         if format == "csv":
             output = io.StringIO()
             writer = csv.writer(output)
-            writer.writerow(["回合", "商店", "类型", "商品", "数量", "金额（元）", "余额（元）"])
-            labels = {"purchase": "采购", "sale": "销售", "marketing": "营销", "operations": "经营费用"}
+            language = arena.get("language", LEGACY_LANGUAGE)
+            writer.writerow(CSV_HEADERS[language])
+            labels = CSV_KINDS[language]
             for item in reversed(service.ledger(arena_id)):
                 name = item["merchant_name"]
                 if name.startswith(("=", "+", "-", "@")):
@@ -427,9 +446,9 @@ def create_app(
         return check_connection(config)
 
     @app.post("/api/model-profiles/{profile_id}/copy", status_code=201)
-    def copy_profile(profile_id: str):
+    def copy_profile(profile_id: str, body: CopyInput | None = None):
         config = app.state.database.model_settings(profile_id)
-        config["name"] += " · 副本"
+        config["name"] = body.name if body else (config["name"] + " · copy")[:60]
         return app.state.database.save_profile(ModelProfileInput.model_validate(config).model_dump())
 
     distribution = PROJECT_ROOT / "frontend" / "dist"

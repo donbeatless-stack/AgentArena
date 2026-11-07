@@ -7,8 +7,8 @@ from contextvars import ContextVar
 from langchain.agents.middleware import ModelRequest, ModelResponse, wrap_model_call, wrap_tool_call
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from arena.agents.tool_records import BUDGET_EXHAUSTED
 from arena.infrastructure.events import emit
+from arena.locales import tr
 
 tool_budget = ContextVar("arena_tool_budget", default=6)
 
@@ -29,7 +29,7 @@ def bounded_tools(request: ModelRequest, handler: Callable[[ModelRequest], Model
     result = handler(
         request.override(
             tools=tools,
-            messages=[*request.messages, HumanMessage(content="工具额度已用完，请立即按指定结构提交最终经营方案。")],
+            messages=[*request.messages, HumanMessage(content=tr("prompt.budget_exhausted"))],
         )
         if not tools
         else request.override(tools=tools)
@@ -62,7 +62,7 @@ def budgeted_execution(request, handler):
     ]
     total_position = next(index for index, call in enumerate(all_calls) if call["id"] == request.tool_call["id"])
     if position >= limit or total_position >= tool_budget.get():
-        return ToolMessage(content=BUDGET_EXHAUSTED, tool_call_id=request.tool_call["id"], name=name)
+        return ToolMessage(content=tr("tool.budget_exhausted"), tool_call_id=request.tool_call["id"], name=name)
     emit("decide", "tool_started", "调用经营工具", tool=name, arguments=request.tool_call["args"])
     result = handler(request)
     emit("decide", "tool_completed", "经营工具已返回", tool=name, result=result.content)

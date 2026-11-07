@@ -3,6 +3,7 @@
 from arena.domain.models import ExperimentInput, ExperimentVariant
 from arena.domain.procurement import LEGACY_POLICY
 from arena.infrastructure.database import encode
+from arena.locales import LEGACY_LANGUAGE, tr
 
 
 def select_and_validate(service, experiment_id, request):
@@ -15,6 +16,7 @@ def select_and_validate(service, experiment_id, request):
     if not eligible:
         raise ValueError("开发集所有方案均有破产记录，请先调整候选策略")
     selected = max(eligible, key=lambda item: (item["average_profit"], -item["total_tokens"]))
+    language = development["config"].get("language", LEGACY_LANGUAGE)
     variants = development["config"]["variants"]
     winner = next(item for item in variants if item["id"] == selected["variant_id"])
     baseline = variants[0] if variants[0]["id"] != winner["id"] else variants[1]
@@ -22,7 +24,8 @@ def select_and_validate(service, experiment_id, request):
     if required > request.round_budget:
         raise ValueError(f"本次验证需要 {required} 个商店回合，超过预算 {request.round_budget}")
     config = ExperimentInput(
-        name=development["name"][:40] + " · 独立验证",
+        name=development["name"][:40] + tr("name.validation", language),
+        language=language,
         scenario=development["config"]["scenario"],
         rounds=development["config"]["rounds"],
         seeds=request.seeds,
@@ -39,10 +42,10 @@ def select_and_validate(service, experiment_id, request):
     stored["selection"] = {
         "development_id": experiment_id,
         "selected_variant": winner["name"],
-        "rule": "无破产方案中开发集平均收益最大；同收益选 Token 更少者",
+        "rule": tr("selection.rule", language),
         "round_budget": request.round_budget,
         "required_store_rounds": required,
-        "warning": "开发集选择有偏；是否有效以独立验证结果为准",
+        "warning": tr("selection.warning", language),
     }
     with service.db.connect() as conn:
         conn.execute("UPDATE experiments SET config=? WHERE id=?", (encode(stored), validation["id"]))

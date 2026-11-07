@@ -3,6 +3,8 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from arena.locales import DEFAULT_LANGUAGE, Language
+
 
 class ProductAction(BaseModel):
     product_id: Literal["coffee", "oats", "bar"]
@@ -83,6 +85,7 @@ class ArenaInput(BaseModel):
     initial_capital: int = Field(default=1000000, ge=300000, le=10000000)
     merchants: list[MerchantInput] = Field(min_length=2, max_length=4)
     approval_policy: Literal["off", "risk", "all"] = "off"
+    language: Language = DEFAULT_LANGUAGE
 
 
 class ApprovalInput(BaseModel):
@@ -96,6 +99,12 @@ class ApprovalInput(BaseModel):
         if self.action == "modify" and self.plan is None:
             raise ValueError("修改审批必须提供完整经营方案")
         return self
+
+
+class CopyInput(BaseModel):
+    """Name for a copied connection; the client names it in the UI language."""
+
+    name: str = Field(min_length=1, max_length=60)
 
 
 class ForkInput(BaseModel):
@@ -187,6 +196,7 @@ class ExperimentInput(BaseModel):
     workflow: Literal["direct", "reviewed", "adaptive"] = "direct"
     variants: list[ExperimentVariant] = Field(default=[], max_length=4)
     split: Literal["development", "holdout"] = "holdout"
+    language: Language = DEFAULT_LANGUAGE
 
     @model_validator(mode="after")
     def unique_strategies(self):
