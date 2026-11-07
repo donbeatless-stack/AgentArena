@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../../api";
 import { Button, useToast } from "../../components/ui";
 import type { Experiment } from "../../types";
+import { t } from "../../i18n";
 
 export function StrategySelection({
   experiment,
@@ -21,23 +22,25 @@ export function StrategySelection({
     return null;
   return (
     <section className="panel branch-panel">
-      <h3>筛选策略并独立验证</h3>
+      <h3>{t("Select a strategy and validate it independently")}</h3>
       <p>
-        从无破产记录的方案中选出开发集平均收益最高者，再与基线在未使用的种子上比较。开发集名次不能替代验证结果。
+        {t(
+          "Among variants with no bankruptcies, pick the one with the highest average development profit, then compare it with the baseline on unused seeds. A development ranking is not a validation result.",
+        )}
       </p>
       <div className="form-grid">
         <label className="field">
-          独立验证种子
+          {t("Validation seeds")}
           <input
-            aria-label="独立验证种子"
+            aria-label={t("Validation seeds")}
             value={seeds}
             onChange={(event) => setSeeds(event.target.value)}
           />
         </label>
         <label className="field">
-          验证预算（商店回合）
+          {t("Validation budget (store-rounds)")}
           <input
-            aria-label="验证预算"
+            aria-label={t("Validation budget")}
             type="number"
             min="6"
             max="600"
@@ -72,7 +75,7 @@ export function StrategySelection({
           }
         }}
       >
-        筛选并运行独立验证
+        {t("Select and run validation")}
       </Button>
     </section>
   );

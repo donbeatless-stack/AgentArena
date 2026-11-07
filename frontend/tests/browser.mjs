@@ -72,10 +72,13 @@ const browser = await chromium.launch({
         }
       : {}),
 });
+// The suite asserts Chinese copy; a zh-CN browser locale selects the Chinese UI.
+// The English UI is covered by its own check near the end.
 const page = await browser.newPage({
   viewport: { width: 1440, height: 1100 },
   deviceScaleFactor: 1,
   reducedMotion: "reduce",
+  locale: "zh-CN",
 });
 const errors = [],
   results = [];
@@ -933,6 +936,30 @@ try {
       assert.equal(experiments[0].config.seeds[0], 1811);
     },
   );
+  await check("Every key rendered in the Chinese UI has a translation", async () => {
+    const missing = await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("arena.i18n.missing") || "[]"),
+    );
+    assert.deepEqual(missing, []);
+  });
+  await check("English UI renders and the language toggle persists", async () => {
+    await page.goto(base);
+    await page.getByRole("heading", { name: "竞技场", exact: true }).waitFor();
+    await page.getByRole("button", { name: "切换语言" }).click();
+    await page.getByRole("heading", { name: "Arena", exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.lang), "en");
+    await page.getByRole("link", { name: "Strategies" }).first().waitFor();
+    await shot("dashboard-english");
+    await page.getByRole("link", { name: /Weekend Market · Opening Match/ }).click();
+    await page.getByRole("tab", { name: "Market panorama" }).waitFor();
+    await page.locator(".theatre-shop").first().waitFor();
+    await shot("arena-english");
+    await page.reload();
+    await page.getByRole("tab", { name: "Ledger" }).click();
+    await page.getByRole("columnheader", { name: "Cash balance" }).waitFor();
+    await page.getByRole("button", { name: "Switch language" }).click();
+    await page.getByRole("tab", { name: "交易账本" }).waitFor();
+  });
   await check("No unhandled browser or server errors", async () =>
     assert.deepEqual(errors, []),
   );

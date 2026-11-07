@@ -2,6 +2,7 @@ import { useState } from "react";
 import { signedMoney } from "../../api";
 import { COLORS } from "../../components/Charts";
 import type { Experiment } from "../../types";
+import { st, t } from "../../i18n";
 
 export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
   const [metric, setMetric] = useState<"tokens" | "latency">("tokens");
@@ -9,7 +10,7 @@ export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
   if (!scores.length)
     return (
       <div className="experiment-visual-empty">
-        首场结算后显示收益与调用开销。
+        {t("Profit and model cost appear after the first match settles.")}
       </div>
     );
   const costs = scores.map((score) =>
@@ -27,11 +28,11 @@ export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
     <div className="experiment-visual">
       <div className="visual-heading">
         <div>
-          <h3>收益值得这份开销吗？</h3>
+          <h3>{t("Is the profit worth the cost?")}</h3>
           <p>
             {hasCost
-              ? "越靠左上，平均收益越高、每轮开销越少。"
-              : "规则策略不消耗模型 Token，先比较经营收益。"}
+              ? t("Further up and left means higher average profit at lower cost per round.")
+              : t("Rule strategies use no model tokens, so compare profit first.")}
           </p>
         </div>
         <div className="segmented">
@@ -45,7 +46,7 @@ export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
             className={metric === "latency" ? "active" : ""}
             onClick={() => setMetric("latency")}
           >
-            耗时
+            {t("Latency")}
           </button>
         </div>
       </div>
@@ -53,7 +54,11 @@ export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
         <svg
           viewBox="0 0 580 255"
           role="img"
-          aria-label={`平均收益与每轮${metric === "tokens" ? "Token" : "耗时"}对比`}
+          aria-label={
+            metric === "tokens"
+              ? t("Average profit vs. tokens per round")
+              : t("Average profit vs. latency per round")
+          }
         >
           {[0, 0.5, 1].map((ratio) => (
             <g key={ratio}>
@@ -85,8 +90,8 @@ export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
           ))}
           <text x="295" y="249" textAnchor="middle" className="chart-label">
             {metric === "tokens"
-              ? "平均每商店回合 Token"
-              : "平均每商店回合耗时 / 秒"}
+              ? t("Average tokens per store-round")
+              : t("Average seconds per store-round")}
           </text>
           {scores.map((score, index) => (
             <g key={score.strategy_id}>
@@ -99,9 +104,9 @@ export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
                 strokeWidth="3"
               >
                 <title>
-                  {score.name}：{signedMoney(score.average_profit)}，
+                  {st(score.name)}: {signedMoney(score.average_profit)},{" "}
                   {costs[index].toFixed(1)}{" "}
-                  {metric === "tokens" ? "tokens" : "秒"}
+                  {metric === "tokens" ? "tokens" : t("s")}
                 </title>
               </circle>
               <text
@@ -120,7 +125,7 @@ export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
         <div className="profit-comparison-bars">
           {scores.map((score) => (
             <div key={score.strategy_id}>
-              <span>{score.name}</span>
+              <span>{st(score.name)}</span>
               <div>
                 <i
                   style={{
@@ -141,28 +146,35 @@ export function ExperimentVisual({ experiment }: { experiment: Experiment }) {
             style={{ borderTopColor: COLORS[score.color] }}
           >
             <strong>
-              {index + 1}. {score.name}
+              {index + 1}. {st(score.name)}
             </strong>
             <b>{signedMoney(score.average_profit)}</b>
-            <small>平均净收益 · {score.samples} 场</small>
+            <small>
+              {t("Average net profit · {count} matches", { count: score.samples })}
+            </small>
             <div>
               <span>
-                胜率 <b>{score.win_rate}%</b>
+                {t("Win rate")} <b>{score.win_rate}%</b>
               </span>
               <span>
-                缺货 <b>{score.stockout_rate}%</b>
+                {t("Stock-outs")} <b>{score.stockout_rate}%</b>
               </span>
             </div>
             <p>
               {score.confidence_interval
-                ? `95% 均值区间 ${signedMoney(score.confidence_interval[0])} ～ ${signedMoney(score.confidence_interval[1])}`
-                : "样本不足，暂不计算均值区间"}
+                ? t("95% CI of the mean: {low} to {high}", {
+                    low: signedMoney(score.confidence_interval[0]),
+                    high: signedMoney(score.confidence_interval[1]),
+                  })
+                : t("Not enough samples for a confidence interval yet")}
             </p>
           </article>
         ))}
       </div>
       <p className="experiment-visual-note">
-        收益为沙盘结算结果。收益与成本分别展示；能力是否有效，结合配对区间和独立验证判断。
+        {t(
+          "Profit comes from simulated settlement and is shown separately from cost. Judge whether a capability helps from paired intervals and independent validation.",
+        )}
       </p>
     </div>
   );

@@ -1,24 +1,25 @@
 import type { DecisionEvent, HistoryPoint, Merchant } from "../../types";
+import { st, t } from "../../i18n";
 
 export const ACTIONS: Record<string, string> = {
-  observe: "观察市场",
-  route: "规划行动",
-  decide: "制定方案",
-  simulate: "比较方案",
-  review: "检查风险",
-  approval: "等待批准",
-  negotiate: "协商进货",
-  commit_plan: "等待结算",
-  settle: "结算完成",
+  observe: "Observing market",
+  route: "Planning actions",
+  decide: "Drafting plan",
+  simulate: "Comparing plans",
+  review: "Checking risk",
+  approval: "Awaiting approval",
+  negotiate: "Negotiating supply",
+  commit_plan: "Awaiting settlement",
+  settle: "Settled",
 };
 export const TOOLS: Record<string, string> = {
-  inspect_store: "查看库存",
-  observe_market: "查看市场",
-  review_history: "复盘经营",
-  evaluate_plan: "试算方案",
-  recall_experience: "检索经验",
+  inspect_store: "Checking stock",
+  observe_market: "Checking market",
+  review_history: "Reviewing history",
+  evaluate_plan: "Projecting plan",
+  recall_experience: "Recalling experience",
 };
-export const PRODUCTS = { coffee: "咖啡", oats: "燕麦", bar: "能量棒" };
+export const PRODUCTS = { coffee: "Coffee", oats: "Oats", bar: "Energy bar" };
 
 // A replay has one cursor for the entire market. No merchant can see a later event.
 export function storeAtEvent(
@@ -35,12 +36,14 @@ export function storeAtEvent(
 }
 
 export function actionLabel(event?: DecisionEvent): string {
-  if (!event) return "等待本轮行动";
-  if (event.status === "failed") return "执行中断";
-  if (event.status === "skipped") return "继续下一步";
+  if (!event) return t("Waiting for this round");
+  if (event.status === "failed") return t("Interrupted");
+  if (event.status === "skipped") return t("Moving on");
   if (event.payload.tool)
-    return TOOLS[event.payload.tool] ?? event.payload.tool;
-  return ACTIONS[event.node] ?? event.label;
+    return TOOLS[event.payload.tool]
+      ? t(TOOLS[event.payload.tool])
+      : event.payload.tool;
+  return ACTIONS[event.node] ? t(ACTIONS[event.node]) : st(event.label);
 }
 
 export interface Highlight {
@@ -58,7 +61,7 @@ export function highlights(history: HistoryPoint[]): Highlight[] {
       (a, b) => b.profit - a.profit,
     )[0];
     if (index > 1 && leader.id !== oldLeader.id)
-      result.push({ round: point.round, label: "排名反超", kind: "lead" });
+      result.push({ round: point.round, label: t("Lead change"), kind: "lead" });
     else if (
       point.merchants.some(
         (store) =>
@@ -66,9 +69,13 @@ export function highlights(history: HistoryPoint[]): Highlight[] {
           previous.merchants.find((old) => old.id === store.id)!.profit,
       )
     ) {
-      result.push({ round: point.round, label: "出现回合亏损", kind: "loss" });
+      result.push({ round: point.round, label: t("Round loss"), kind: "loss" });
     } else if (point.event !== previous.event)
-      result.push({ round: point.round, label: point.event, kind: "market" });
+      result.push({
+        round: point.round,
+        label: st(point.event),
+        kind: "market",
+      });
   }
   return result;
 }

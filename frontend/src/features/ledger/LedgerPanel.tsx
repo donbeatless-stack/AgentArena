@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { money, signedMoney, useResource } from "../../api";
 import { Button, Empty, ErrorState, Loading } from "../../components/ui";
 import type { LedgerEntry, Merchant } from "../../types";
+import { st, t } from "../../i18n";
 
 const PRODUCT_NAMES: Record<string, string> = {
-  coffee: "冷萃咖啡",
-  oats: "燕麦早餐",
-  bar: "能量棒",
+  coffee: "Cold brew coffee",
+  oats: "Oat breakfast",
+  bar: "Energy bar",
 };
 
 export function LedgerPanel({
@@ -31,24 +32,24 @@ export function LedgerPanel({
   if (error) return <ErrorState message={error} retry={reload} />;
   if (!data) return <Loading />;
   const labels = {
-    purchase: "商品采购",
-    sale: "商品销售",
-    marketing: "营销投入",
-    operations: "经营费用",
+    purchase: "Purchase",
+    sale: "Sale",
+    marketing: "Marketing",
+    operations: "Operating cost",
   };
   return (
     <div className="ledger-panel">
       <div className="ledger-toolbar">
-        <span>{data.length} 笔交易</span>
+        <span>{t("{count} transactions", { count: data.length })}</span>
         <select
-          aria-label="账本商店筛选"
+          aria-label={t("Filter ledger by store")}
           value={merchant}
           onChange={(event) => setMerchant(event.target.value)}
         >
-          <option value="">全部商店</option>
+          <option value="">{t("All stores")}</option>
           {merchants.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.name}
+              {st(item.name)}
             </option>
           ))}
         </select>
@@ -58,22 +59,22 @@ export function LedgerPanel({
           className="text-button"
         >
           <Download size={15} />
-          导出 CSV
+          {t("Export CSV")}
         </a>
       </div>
       {data.length === 0 ? (
-        <Empty title="暂无交易" />
+        <Empty title={t("No transactions yet")} />
       ) : (
         <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>回合</th>
-                <th>商店</th>
-                <th>交易类型</th>
-                <th>商品 / 数量</th>
-                <th className="text-right">交易金额</th>
-                <th className="text-right">现金余额</th>
+                <th>{t("Round")}</th>
+                <th>{t("Store")}</th>
+                <th>{t("Type")}</th>
+                <th>{t("Product / qty")}</th>
+                <th className="text-right">{t("Amount")}</th>
+                <th className="text-right">{t("Cash balance")}</th>
               </tr>
             </thead>
             <tbody>
@@ -84,17 +85,17 @@ export function LedgerPanel({
                       R{String(item.round_number).padStart(2, "0")}
                     </span>
                   </td>
-                  <td>{item.merchant_name}</td>
+                  <td>{st(item.merchant_name)}</td>
                   <td>
                     <span
                       className={`transaction-type transaction-${item.kind}`}
                     >
-                      {labels[item.kind]}
+                      {t(labels[item.kind])}
                     </span>
                   </td>
                   <td>
                     {item.product_id
-                      ? `${PRODUCT_NAMES[item.product_id]} × ${item.quantity}`
+                      ? `${t(PRODUCT_NAMES[item.product_id])} × ${item.quantity}`
                       : "—"}
                   </td>
                   <td
@@ -120,14 +121,14 @@ export function LedgerPanel({
             disabled={page === 0}
             onClick={() => setPage(page - 1)}
           >
-            上一页
+            {t("Previous")}
           </Button>
           <Button
             variant="secondary"
             disabled={(page + 1) * 30 >= data.length}
             onClick={() => setPage(page + 1)}
           >
-            下一页
+            {t("Next")}
           </Button>
         </div>
       )}

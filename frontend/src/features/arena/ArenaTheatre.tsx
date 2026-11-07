@@ -14,6 +14,7 @@ import { api, signedMoney } from "../../api";
 import { ProfitChart } from "../../components/Charts";
 import { Modal } from "../../components/ui";
 import type { Arena, DecisionEvent } from "../../types";
+import { st, t } from "../../i18n";
 import { AnimatedValue } from "../decisions/AnimatedValue";
 import { DecisionFlow } from "../decisions/DecisionFlow";
 import { DecisionPanel } from "../decisions/DecisionPanel";
@@ -115,9 +116,22 @@ export function ArenaTheatre({
     visible.find((event) => event.payload.market)?.payload.market ??
     arena.snapshot.market;
   return (
-    <section className="arena-theatre" aria-label="全景赛场">
-      <div className="supply-policy" title={arena.supply_policy === "proportional_v1" ? "全部订单完成后按有效需求比例分货；整数余数按小数余量、轮换席位分配，分到即购买。" : "历史规则：按轮换顺序预留库存。新建或再赛使用统一分货。"}>
-        {arena.supply_policy === "proportional_v1" ? "统一分货 · 按有效采购量比例分配" : "历史规则 · 按轮换顺序采购"}
+    <section className="arena-theatre" aria-label={t("Market panorama")}>
+      <div
+        className="supply-policy"
+        title={
+          arena.supply_policy === "proportional_v1"
+            ? t(
+                "Once all orders are in, supply is split in proportion to valid demand; integer remainders go by fractional share and rotating seats, and allocated units must be bought.",
+              )
+            : t(
+                "Legacy rule: stock is reserved in rotating order. New matches and rematches use unified allocation.",
+              )
+        }
+      >
+        {arena.supply_policy === "proportional_v1"
+          ? t("Unified allocation · proportional to valid orders")
+          : t("Legacy rule · rotating purchase order")}
       </div>
       <div className={`market-sky weather-${weather.event.type}`}>
         <div className="market-title">
@@ -125,7 +139,7 @@ export function ArenaTheatre({
             THE MARKET / R{String(currentRound).padStart(2, "0")}
           </span>
           <h2>
-            同一市场，各显身手
+            {t("One market, every store for itself")}
             <span className="sky-sun" />
           </h2>
         </div>
@@ -136,13 +150,13 @@ export function ArenaTheatre({
             <Zap size={22} />
           )}
           <div>
-            <strong>{weather.event.name}</strong>
-            <small>{weather.event.impact}</small>
+            <strong>{st(weather.event.name)}</strong>
+            <small>{st(weather.event.impact)}</small>
           </div>
         </div>
         <span className={`theatre-signal ${connected ? "online" : ""}`}>
           <Radio size={13} />
-          {round !== null || cursor !== null ? "历史回放" : "实时事件"}
+          {round !== null || cursor !== null ? t("Replay") : t("Live events")}
         </span>
         {weather.event.type === "rain" && (
           <div className="scene-rain" aria-hidden="true">
@@ -184,7 +198,7 @@ export function ArenaTheatre({
             />
           ) : (
             <div className="shop-loading" key={index}>
-              正在载入回合起点…
+              {t("Loading round start…")}
             </div>
           ),
         )}
@@ -198,19 +212,22 @@ export function ArenaTheatre({
       </div>
       <div className="theatre-footer">
         <span>
-          <i /> {settled ? "本轮销售结算演示" : "所有商店准备完成后统一结算"}
+          <i />{" "}
+          {settled
+            ? t("Showing this round's sales settlement")
+            : t("Settles together once every store is ready")}
         </span>
-        <span>货架按数量缩放 · 金额单位：元</span>
+        <span>{t("Shelves scale with quantity · amounts in ¥")}</span>
       </div>
-      <div className="market-scoreboard" aria-label="全店实时排名">
+      <div className="market-scoreboard" aria-label={t("Live store ranking")}>
         {ranked.map((store, index) => (
           <div className={`score-slot store-${store.color}`} key={store.id}>
             <span className="score-rank">
               {index === 0 ? <Trophy size={16} /> : `0${index + 1}`}
             </span>
             <span>
-              {store.name}
-              <small>累计净收益</small>
+              {st(store.name)}
+              <small>{t("Net profit")}</small>
             </span>
             <strong className={store.profit >= 0 ? "positive" : "negative"}>
               <AnimatedValue value={store.profit} format={signedMoney} />
@@ -222,7 +239,7 @@ export function ArenaTheatre({
         <button
           className="replay-play"
           disabled={!roundEvents.length}
-          aria-label={playing ? "暂停全景回放" : "播放全景回放"}
+          aria-label={playing ? t("Pause panorama replay") : t("Play panorama replay")}
           onClick={() => {
             if (
               !playing &&
@@ -236,7 +253,7 @@ export function ArenaTheatre({
         </button>
         <div className="scene-scrubber">
           <label htmlFor="market-cursor">
-            全店同步回放{" "}
+            {t("Synchronized replay")}{" "}
             <small>
               {cursor === null ? roundEvents.length : cursor + 1} /{" "}
               {roundEvents.length}
@@ -244,7 +261,7 @@ export function ArenaTheatre({
           </label>
           <input
             id="market-cursor"
-            aria-label="全景事件位置"
+            aria-label={t("Panorama event position")}
             type="range"
             min={-1}
             max={Math.max(-1, roundEvents.length - 1)}
@@ -257,7 +274,7 @@ export function ArenaTheatre({
           />
         </div>
         <select
-          aria-label="全景回放速度"
+          aria-label={t("Panorama replay speed")}
           value={speed}
           onChange={(event) => setSpeed(+event.target.value)}
         >
@@ -273,11 +290,11 @@ export function ArenaTheatre({
             setPlaying(false);
           }}
         >
-          跟随最新
+          {t("Follow latest")}
         </button>
       </div>
       <div className="scene-highlights">
-        <span>关键回合</span>
+        <span>{t("Key rounds")}</span>
         {roundHighlights.map((item) => (
           <button
             key={item.round}
@@ -290,7 +307,7 @@ export function ArenaTheatre({
           </button>
         ))}
         {roundHighlights.length === 0 && (
-          <small>暂无关键变化，继续经营以观察差异</small>
+          <small>{t("No key changes yet; keep playing to see differences")}</small>
         )}
       </div>
       <details
@@ -299,7 +316,7 @@ export function ArenaTheatre({
         onToggle={(event) => setExpandedChart(event.currentTarget.open)}
       >
         <summary>
-          收益走势 <span>查看所有商店的累计表现</span>
+          {t("Profit trend")} <span>{t("Cumulative performance of every store")}</span>
         </summary>
         {expandedChart && roundHistory.length > 0 && (
           <ProfitChart
@@ -312,7 +329,11 @@ export function ArenaTheatre({
       <Modal
         open={detail !== null}
         onClose={() => setDetail(null)}
-        title={selected ? `${selected.name} · 决策详情` : "决策详情"}
+        title={
+          selected
+            ? t("{name} · decision details", { name: st(selected.name) })
+            : t("Decision details")
+        }
         wide
       >
         {selected && (
@@ -340,7 +361,7 @@ export function ArenaTheatre({
                   .map((event) => (
                     <p key={event.id}>
                       <span>{actionLabel(event)}</span>
-                      <small>{event.label}</small>
+                      <small>{st(event.label)}</small>
                     </p>
                   ))}
               </div>

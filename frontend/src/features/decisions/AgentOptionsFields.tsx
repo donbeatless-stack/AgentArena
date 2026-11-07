@@ -1,4 +1,5 @@
 import type { AgentOptions, Mode } from "../../types";
+import { t } from "../../i18n";
 
 export function AgentOptionsFields({
   value,
@@ -19,9 +20,9 @@ export function AgentOptionsFields({
   return (
     <div className={`agent-options-grid ${mode === "rule" ? "rule-options" : ""}`}>
       <label className="field">
-        经验记忆
+        {t("Memory")}
         <select
-          aria-label={`${label}记忆`}
+          aria-label={t("{label} memory", { label })}
           value={options.memory}
           onChange={(event) =>
             onChange({
@@ -30,28 +31,28 @@ export function AgentOptionsFields({
             })
           }
         >
-          <option value="none">关闭记忆</option>
-          <option value="recent">最近五轮</option>
-          <option value="episodic">检索历史经验</option>
+          <option value="none">{t("No memory")}</option>
+          <option value="recent">{t("Last five rounds")}</option>
+          <option value="episodic">{t("Retrieve past experience")}</option>
         </select>
       </label>
       <label className="field">
-        {mode === "llm" ? "供应商谈判" : "规则议价"}
+        {mode === "llm" ? t("Supplier negotiation") : t("Rule-based bargaining")}
         <select
-          aria-label={`${label}谈判`}
+          aria-label={t("{label} negotiation", { label })}
           value={options.negotiation ? "on" : "off"}
           onChange={(event) =>
             onChange({ ...options, negotiation: event.target.value === "on" })
           }
         >
-          <option value="off">关闭</option>
-          <option value="on">开启</option>
+          <option value="off">{t("Off")}</option>
+          <option value="on">{t("On")}</option>
         </select>
       </label>
       {mode === "llm" && <label className="field">
-        工具调用预算
+        {t("Tool call budget")}
         <input
-          aria-label={`${label}工具预算`}
+          aria-label={t("{label} tool budget", { label })}
           type="number"
           min="1"
           max="10"

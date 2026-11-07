@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { locale, st, t } from "./i18n";
 
 export async function api<T>(
   path: string,
@@ -14,8 +15,8 @@ export async function api<T>(
     };
     throw new Error(
       typeof error.detail === "string"
-        ? error.detail
-        : error.detail?.map((item) => item.msg).join("；") || "请求失败",
+        ? st(error.detail)
+        : error.detail?.map((item) => item.msg).join("; ") || t("Request failed"),
     );
   }
   return response.json() as Promise<T>;
@@ -43,17 +44,20 @@ export function useResource<T>(path: string) {
 export const money = (value: number, compact = false): string => {
   const amount = value / 100;
   if (compact && Math.abs(amount) >= 10000)
-    return `${(amount / 10000).toFixed(1)}万`;
-  return amount.toLocaleString("zh-CN", {
+    return locale() === "zh-CN"
+      ? `${(amount / 10000).toFixed(1)}万`
+      : `${(amount / 1000).toFixed(1)}k`;
+  return amount.toLocaleString(locale(), {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
 };
 export const signedMoney = (value: number): string =>
   `${value >= 0 ? "+" : "−"}¥${money(Math.abs(value))}`;
-export const count = (value: number): string => value.toLocaleString("zh-CN");
+export const count = (value: number): string =>
+  value.toLocaleString(locale());
 export const date = (value: string): string =>
-  new Date(value).toLocaleDateString("zh-CN", {
+  new Date(value).toLocaleDateString(locale(), {
     month: "2-digit",
     day: "2-digit",
   });

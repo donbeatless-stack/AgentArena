@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { money } from "../api";
+import { t } from "../i18n";
 import type { HistoryPoint, Merchant } from "../types";
 
 export const COLORS = {
@@ -45,7 +46,7 @@ export function ProfitChart({
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="各商店累计净收益趋势"
+        aria-label={t("Cumulative net profit by store")}
       >
         {[0, 1, 2, 3].map((index) => {
           const value = min + ((max - min) * index) / 3;
@@ -85,7 +86,7 @@ export function ProfitChart({
               textAnchor="middle"
               className="chart-label"
             >
-              {point.round === 0 ? "开赛" : `R${point.round}`}
+              {point.round === 0 ? t("Start") : `R${point.round}`}
             </text>
           ))}
         {merchants.map((merchant) => {
@@ -163,7 +164,7 @@ export function ProfitChart({
       </svg>
       {hover !== null && history[hover] && (
         <div className="chart-tooltip">
-          <strong>第 {hover} 回合</strong>
+          <strong>{t("Round {round}", { round: hover })}</strong>
           {history[hover].merchants.map((item) => {
             const merchant = merchants.find((entry) => entry.id === item.id)!;
             return (

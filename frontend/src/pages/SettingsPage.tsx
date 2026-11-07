@@ -13,6 +13,7 @@ import {
 import { api, useResource } from "../api";
 import type { ModelProfile, ModelSettings } from "../types";
 import { Button, ErrorState, Loading, useToast } from "../components/ui";
+import { st, t } from "../i18n";
 
 const NEW_PROFILE: ModelProfile = {
   id: "",
@@ -75,7 +76,7 @@ export function SettingsPage() {
         <div>
           <div className="eyebrow">MODEL WORKSPACE</div>
           <h1>
-            运行设置
+            {t("Settings")}
             <span className="title-dot" />
           </h1>
         </div>
@@ -89,13 +90,13 @@ export function SettingsPage() {
           }}
         >
           <Plus size={16} />
-          添加模型
+          {t("Add model")}
         </Button>
       </div>
       <div className="model-settings-layout">
         <aside className="model-library">
           <div className="section-heading">
-            <h2>模型连接</h2>
+            <h2>{t("Model connection")}</h2>
             <span>{profiles.data.length}</span>
           </div>
           {profiles.data.map((profile) => (
@@ -106,8 +107,8 @@ export function SettingsPage() {
             >
               <Server size={18} />
               <span>
-                <strong>{profile.name}</strong>
-                <small>{profile.model || "未选择模型"}</small>
+                <strong>{st(profile.name)}</strong>
+                <small>{profile.model || t("No model selected")}</small>
               </span>
               <i
                 className={profile.has_key && profile.enabled ? "online" : ""}
@@ -117,39 +118,39 @@ export function SettingsPage() {
           {selected === "new" && (
             <div className="model-profile-card selected">
               <Plus size={18} />
-              <span>新模型连接</span>
+              <span>{t("New model connection")}</span>
             </div>
           )}
           <section className="panel runtime-card">
             <div className="panel-heading">
-              <h2>运行环境</h2>
+              <h2>{t("Runtime")}</h2>
             </div>
             <div className="runtime-row">
-              <span>业务存储</span>
+              <span>{t("Business storage")}</span>
               <strong>SQLite</strong>
             </div>
             <div className="runtime-row">
-              <span>任务队列</span>
+              <span>{t("Job queue")}</span>
               <strong>
                 {runtime.data?.queue === "redis"
                   ? "Redis Streams"
-                  : "SQLite 队列"}
+                  : t("SQLite queue")}
               </strong>
             </div>
             <div className="runtime-row">
-              <span>工作流</span>
+              <span>{t("Workflow")}</span>
               <strong>LangGraph</strong>
             </div>
           </section>
         </aside>
         <section className="panel settings-form">
           <div className="panel-heading">
-            <h2>{form.id ? form.name : "添加模型"}</h2>
+            <h2>{form.id ? st(form.name) : t("Add model")}</h2>
             <span
               className={`connection-badge ${form.has_key && form.model ? "configured" : ""}`}
             >
               <i />
-              {form.has_key && form.model ? "已配置" : "未配置"}
+              {form.has_key && form.model ? t("Configured") : t("Not configured")}
             </span>
           </div>
           <form
@@ -170,7 +171,7 @@ export function SettingsPage() {
                 ]);
                 setSelected(saved.id);
                 runtime.reload();
-                toast("模型连接已保存");
+                toast(t("Model connection saved"));
               } catch (cause) {
                 toast((cause as Error).message, true);
               } finally {
@@ -181,7 +182,7 @@ export function SettingsPage() {
             <div className="settings-fields">
               <div className="form-grid">
                 <label className="field">
-                  连接名称
+                  {t("Connection name")}
                   <input
                     required
                     maxLength={60}
@@ -190,7 +191,7 @@ export function SettingsPage() {
                   />
                 </label>
                 <label className="field">
-                  服务商
+                  {t("Provider")}
                   <select
                     value={form.provider}
                     onChange={(e) =>
@@ -201,12 +202,12 @@ export function SettingsPage() {
                     }
                   >
                     <option value="deepseek">DeepSeek</option>
-                    <option value="compatible">兼容 API</option>
+                    <option value="compatible">{t("Compatible API")}</option>
                   </select>
                 </label>
               </div>
               <label className="field">
-                API 地址
+                {t("API base URL")}
                 <input
                   required
                   type="url"
@@ -216,7 +217,7 @@ export function SettingsPage() {
                 />
               </label>
               <label className="field">
-                模型名称
+                {t("Model name")}
                 <input
                   required
                   maxLength={100}
@@ -237,7 +238,7 @@ export function SettingsPage() {
                   {form.has_key && !clearKey && (
                     <span className="key-saved">
                       <Check size={12} />
-                      已保存
+                      {t("Saved")}
                     </span>
                   )}
                 </span>
@@ -253,13 +254,13 @@ export function SettingsPage() {
                     }}
                     placeholder={
                       form.has_key && !clearKey
-                        ? "保持已保存的密钥"
-                        : "输入 API Key"
+                        ? t("Keep the saved key")
+                        : t("Enter API key")
                     }
                   />
                   <button
                     type="button"
-                    aria-label={visible ? "隐藏密钥" : "显示密钥"}
+                    aria-label={visible ? t("Hide key") : t("Show key")}
                     onClick={() => setVisible(!visible)}
                   >
                     {visible ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -276,14 +277,14 @@ export function SettingsPage() {
                   }}
                 >
                   <Trash2 size={13} />
-                  {clearKey ? "撤销清除密钥" : "清除已保存密钥"}
+                  {clearKey ? t("Undo clearing the key") : t("Clear saved key")}
                 </button>
               )}
               <div className="settings-divider" />
-              <h3 className="settings-subtitle">执行参数</h3>
+              <h3 className="settings-subtitle">{t("Execution parameters")}</h3>
               <div className="form-grid three">
                 <label className="field">
-                  思考模式
+                  {t("Thinking mode")}
                   <select
                     value={form.thinking}
                     onChange={(e) =>
@@ -293,8 +294,8 @@ export function SettingsPage() {
                       )
                     }
                   >
-                    <option value="disabled">关闭</option>
-                    <option value="enabled">开启</option>
+                    <option value="disabled">{t("Off")}</option>
+                    <option value="enabled">{t("On")}</option>
                   </select>
                 </label>
                 <label className="field">
@@ -310,7 +311,7 @@ export function SettingsPage() {
                   />
                 </label>
                 <label className="field">
-                  请求超时（秒）
+                  {t("Request timeout (s)")}
                   <input
                     type="number"
                     min={5}
@@ -321,7 +322,7 @@ export function SettingsPage() {
                   />
                 </label>
                 <label className="field">
-                  最大执行步数
+                  {t("Max agent steps")}
                   <input
                     type="number"
                     min={3}
@@ -332,7 +333,7 @@ export function SettingsPage() {
                   />
                 </label>
                 <label className="field">
-                  最大输出 Token
+                  {t("Max output tokens")}
                   <input
                     type="number"
                     min={512}
@@ -343,23 +344,23 @@ export function SettingsPage() {
                   />
                 </label>
                 <label className="field">
-                  连接状态
+                  {t("Status")}
                   <select
                     value={String(form.enabled)}
                     onChange={(e) =>
                       update("enabled", e.target.value === "true")
                     }
                   >
-                    <option value="true">启用</option>
-                    <option value="false">停用</option>
+                    <option value="true">{t("Enabled")}</option>
+                    <option value="false">{t("Disabled")}</option>
                   </select>
                 </label>
               </div>
               <details className="model-pricing">
-                <summary>成本计价</summary>
+                <summary>{t("Cost pricing")}</summary>
                 <div className="form-grid">
                   <label className="field">
-                    输入单价（元 / 百万 Token）
+                    {t("Input price (¥ / 1M tokens)")}
                     <input
                       type="number"
                       min={0}
@@ -370,7 +371,7 @@ export function SettingsPage() {
                     />
                   </label>
                   <label className="field">
-                    输出单价（元 / 百万 Token）
+                    {t("Output price (¥ / 1M tokens)")}
                     <input
                       type="number"
                       min={0}
@@ -387,7 +388,7 @@ export function SettingsPage() {
                   className={`connection-result ${connection.ok ? "positive" : "negative"}`}
                   role={connection.ok ? "status" : "alert"}
                 >
-                  {connection.message}
+                  {st(connection.message)}
                 </div>
               )}
             </div>
@@ -416,7 +417,7 @@ export function SettingsPage() {
                   }}
                 >
                   <Copy size={15} />
-                  复制连接
+                  {t("Copy connection")}
                 </Button>
               )}
               <Button
@@ -436,7 +437,9 @@ export function SettingsPage() {
                     );
                     setConnection({
                       ok: true,
-                      message: `工具调用校验通过 · ${result.latency_ms} ms`,
+                      message: t("Tool calling verified · {ms} ms", {
+                        ms: result.latency_ms,
+                      }),
                     });
                   } catch (cause) {
                     setConnection({
@@ -449,11 +452,11 @@ export function SettingsPage() {
                 }}
               >
                 <Network size={16} />
-                测试连接
+                {t("Test connection")}
               </Button>
               <Button type="submit" busy={busy} disabled={testing}>
                 <Save size={16} />
-                保存模型
+                {t("Save model")}
               </Button>
             </div>
           </form>

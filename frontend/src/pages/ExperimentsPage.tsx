@@ -32,6 +32,7 @@ import {
   StatusBadge,
   useToast,
 } from "../components/ui";
+import { locale, st, t } from "../i18n";
 
 export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
   const { data, error, reload } = useResource<Experiment[]>("/experiments");
@@ -39,7 +40,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
   const profiles = useResource<ModelProfile[]>("/model-profiles");
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
-  const [name, setName] = useState("策略对照实验");
+  const [name, setName] = useState(() => t("Strategy comparison experiment"));
   const [scenario, setScenario] = useState("neighborhood");
   const [rounds, setRounds] = useState(12);
   const [seeds, setSeeds] = useState("11, 23, 37");
@@ -53,14 +54,14 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
   const [split, setSplit] = useState("holdout");
   const [variants, setVariants] = useState<ExperimentVariant[]>([
     {
-      name: "标准决策",
+      name: t("Standard decision"),
       strategy_id: "balanced",
       mode: "rule",
       workflow: "direct",
       model_profile_id: "default",
     },
     {
-      name: "试算与审核",
+      name: t("Projection and review"),
       strategy_id: "balanced",
       mode: "rule",
       workflow: "reviewed",
@@ -96,7 +97,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
     }
   };
   const open = () => {
-    setName("策略对照实验");
+    setName(t("Strategy comparison experiment"));
     setStrategyIds(["balanced", "discount", "premium"]);
     setCreating(true);
   };
@@ -106,13 +107,13 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
         <div>
           <div className="eyebrow">THE RESEARCH LAB</div>
           <h1>
-            策略实验室
+            {t("Strategy lab")}
             <span className="title-dot" />
           </h1>
         </div>
         <Button onClick={open}>
           <Plus size={17} />
-          新建实验
+          {t("New experiment")}
         </Button>
       </div>
       {data.length === 0 ? (
@@ -123,11 +124,11 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
             <span className="experiment-bubble bubble-two" />
           </div>
           <span className="eyebrow">OBSERVE. COMPARE. EVOLVE.</span>
-          <h2>让结果，为策略说话。</h2>
-          <p>多组种子，轮换席位，同场对照。</p>
+          <h2>{t("Let results speak for strategies.")}</h2>
+          <p>{t("Multiple seeds, rotating seats, head-to-head comparison.")}</p>
           <Button onClick={open}>
             <Beaker size={17} />
-            创建第一个实验
+            {t("Create your first experiment")}
           </Button>
         </div>
       ) : (
@@ -141,10 +142,13 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
               >
                 <FlaskConical size={18} />
                 <span>
-                  <strong>{item.name}</strong>
+                  <strong>{st(item.name)}</strong>
                   <small>
-                    {date(item.created_at)} · {item.completed}/
-                    {item.arenas.length} 场完成
+                    {date(item.created_at)} ·{" "}
+                    {t("{done}/{total} matches done", {
+                      done: item.completed,
+                      total: item.arenas.length,
+                    })}
                   </small>
                 </span>
                 <i className={`experiment-state ${item.status}`} />
@@ -158,7 +162,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                   <span className="eyebrow">
                     EXPERIMENT {String(active.id).padStart(3, "0")}
                   </span>
-                  <h2>{active.name}</h2>
+                  <h2>{st(active.name)}</h2>
                 </div>
                 <div className="heading-actions">
                   <a
@@ -167,7 +171,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                     className="button button-secondary"
                   >
                     <Download size={15} />
-                    导出
+                    {t("Export")}
                   </a>
                   {active.status !== "completed" && (
                     <Button
@@ -176,44 +180,48 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                       onClick={() => start(active.id)}
                     >
                       <Play size={15} fill="currentColor" />
-                      {active.status === "running" ? "实验进行中" : "运行实验"}
+                      {active.status === "running"
+                        ? t("Experiment running")
+                        : t("Run experiment")}
                     </Button>
                   )}
                 </div>
               </div>
               <div className="experiment-facts">
                 <span>
-                  市场
+                  {t("Market")}
                   <strong>
-                    {
+                    {st(
                       catalog.scenarios.find(
                         (item) => item.id === active.config.scenario,
-                      )?.name
-                    }
+                      )?.name,
+                    )}
                   </strong>
                 </span>
                 <span>
-                  每场回合<strong>{active.config.rounds}</strong>
+                  {t("Rounds per match")}
+                  <strong>{active.config.rounds}</strong>
                 </span>
                 <span>
-                  市场种子<strong>{active.config.seeds.join(" / ")}</strong>
+                  {t("Market seeds")}
+                  <strong>{active.config.seeds.join(" / ")}</strong>
                 </span>
                 <span>
-                  决策引擎
+                  {t("Decision engine")}
                   <strong>
                     {active.config.variants?.length
-                      ? "独立对照方案"
+                      ? t("Separate variants")
                       : active.config.mode === "llm"
                         ? "LLM Agent"
-                        : "策略引擎"}
+                        : t("Rule engine")}
                   </strong>
                 </span>
                 <span>
-                  数据用途
+                  {t("Data split")}
                   <strong>
                     {active.config.split === "development"
-                      ? "策略开发"
-                      : "保留集验收"}
+                      ? t("Development")
+                      : t("Holdout validation")}
                   </strong>
                 </span>
               </div>
@@ -234,32 +242,32 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
             />
             <section className="panel experiment-scores">
               <div className="panel-heading">
-                <h2>策略表现</h2>
-                <span>{active.completed} 场已结算</span>
+                <h2>{t("Strategy performance")}</h2>
+                <span>{t("{count} matches settled", { count: active.completed })}</span>
               </div>
               <ExperimentVisual experiment={active} />
               <details className="experiment-metrics-detail">
-                <summary>完整指标与统计明细</summary>
+                <summary>{t("All metrics and statistics")}</summary>
                 <div className="table-scroll">
                   <table>
                     <thead>
                       <tr>
-                        <th>经营策略</th>
-                        <th className="text-right">平均净收益</th>
-                        <th className="text-right">收益波动</th>
-                        <th className="text-right">胜率</th>
-                        <th className="text-right">样本</th>
-                        <th className="text-right">95% 均值区间</th>
+                        <th>{t("Strategy")}</th>
+                        <th className="text-right">{t("Avg. net profit")}</th>
+                        <th className="text-right">{t("Profit std. dev.")}</th>
+                        <th className="text-right">{t("Win rate")}</th>
+                        <th className="text-right">{t("Samples")}</th>
+                        <th className="text-right">{t("95% CI of mean")}</th>
                         <th className="text-right">Token</th>
-                        <th className="text-right">模型成本估算</th>
-                        <th className="text-right">每轮耗时</th>
-                        <th className="text-right">最大回撤均值</th>
-                        <th className="text-right">断货率</th>
-                        <th className="text-right">库存周转</th>
-                        <th className="text-right">模型工具调用</th>
-                        <th className="text-right">提供经验</th>
-                        <th className="text-right">预测误差</th>
-                        <th className="text-right">谈判采购差额</th>
+                        <th className="text-right">{t("Est. model cost")}</th>
+                        <th className="text-right">{t("Time per round")}</th>
+                        <th className="text-right">{t("Avg. max drawdown")}</th>
+                        <th className="text-right">{t("Stock-out rate")}</th>
+                        <th className="text-right">{t("Inventory turnover")}</th>
+                        <th className="text-right">{t("Tool calls")}</th>
+                        <th className="text-right">{t("Experiences used")}</th>
+                        <th className="text-right">{t("Forecast MAE")}</th>
+                        <th className="text-right">{t("Negotiation savings")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -268,11 +276,11 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                           <td>
                             <span className="score-strategy">
                               <Avatar
-                                name={score.name}
+                                name={st(score.name)}
                                 color={score.color}
                                 small
                               />
-                              {score.name}
+                              {st(score.name)}
                               {index === 0 && score.samples > 0 && (
                                 <Trophy size={14} className="gold" />
                               )}
@@ -281,10 +289,10 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                               <small className="model-tag">
                                 {score.model} ·{" "}
                                 {score.workflow === "adaptive"
-                                  ? "自主规划"
+                                  ? t("Adaptive planning")
                                   : score.workflow === "reviewed"
-                                    ? "审核"
-                                    : "标准"}
+                                    ? t("Reviewed")
+                                    : t("Standard")}
                               </small>
                             )}
                           </td>
@@ -312,7 +320,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                               : "—"}
                           </td>
                           <td className="text-right numeric">
-                            {score.total_tokens?.toLocaleString() ?? "—"}
+                            {score.total_tokens?.toLocaleString(locale()) ?? "—"}
                           </td>
                           <td className="text-right numeric">
                             {score.estimated_model_cost != null
@@ -332,7 +340,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                           </td>
                           <td className="text-right numeric">
                             {score.samples
-                              ? `${score.inventory_turnover} 次`
+                              ? t("{count}×", { count: score.inventory_turnover ?? 0 })
                               : "—"}
                           </td>
                           <td className="text-right numeric">
@@ -361,15 +369,18 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
             {!!active.comparisons?.length && (
               <section className="panel paired-comparisons">
                 <div className="panel-heading">
-                  <h2>相对基线收益</h2>
-                  <span>按种子配对 · 95% 差值区间</span>
+                  <h2>{t("Profit vs. baseline")}</h2>
+                  <span>{t("Paired by seed · 95% CI of the difference")}</span>
                 </div>
                 {active.comparisons.map((item) => (
                   <article key={item.variant}>
                     <div>
-                      <strong>{item.variant}</strong>
+                      <strong>{st(item.variant)}</strong>
                       <small>
-                        对比 {item.baseline} · {item.samples} 组
+                        {t("vs. {baseline} · {count} pairs", {
+                          baseline: st(item.baseline),
+                          count: item.samples,
+                        })}
                       </small>
                     </div>
                     <b
@@ -392,22 +403,27 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
             )}
             <section className="panel">
               <div className="panel-heading">
-                <h2>实验对局</h2>
-                <span>{active.arenas.length} 场</span>
+                <h2>{t("Experiment matches")}</h2>
+                <span>{t("{count} matches", { count: active.arenas.length })}</span>
               </div>
               <div className="experiment-matches">
                 {active.arenas.map((arena) => (
                   <Link key={arena.id} to={`/arenas/${arena.id}`}>
                     <span className="round-tag">S{arena.seed}</span>
                     <div>
-                      <strong>{arena.name}</strong>
+                      <strong>{st(arena.name)}</strong>
                       <small>
-                        回合 {arena.current_round}/{arena.total_rounds}
+                        {t("Round {current}/{total}", {
+                          current: arena.current_round,
+                          total: arena.total_rounds,
+                        })}
                       </small>
                     </div>
                     <StatusBadge status={arena.status} />
                     <span className="experiment-match-profit">
-                      {arena.current_round ? `${arena.leader} 领跑` : "—"}
+                      {arena.current_round
+                        ? t("{name} leads", { name: st(arena.leader) })
+                        : "—"}
                     </span>
                     <ArrowRight size={16} />
                   </Link>
@@ -418,7 +434,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
         </div>
       )}
       <Modal
-        title="新建策略实验"
+        title={t("New strategy experiment")}
         open={creating}
         onClose={() => setCreating(false)}
         wide
@@ -464,18 +480,18 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                 className={!comparison ? "selected" : ""}
                 onClick={() => setComparison(false)}
               >
-                策略对照
+                {t("Strategy comparison")}
               </button>
               <button
                 type="button"
                 className={comparison ? "selected" : ""}
                 onClick={() => setComparison(true)}
               >
-                模型与流程对照
+                {t("Model and workflow comparison")}
               </button>
             </div>
             <label className="field">
-              实验名称
+              {t("Experiment name")}
               <input
                 value={name}
                 required
@@ -485,20 +501,20 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
             </label>
             <div className="form-grid three">
               <label className="field">
-                实验市场
+                {t("Experiment market")}
                 <select
                   value={scenario}
                   onChange={(event) => setScenario(event.target.value)}
                 >
                   {catalog.scenarios.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.name}
+                      {st(item.name)}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="field">
-                每场回合
+                {t("Rounds per match")}
                 <input
                   type="number"
                   min={3}
@@ -509,19 +525,19 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                 />
               </label>
               <label className="field">
-                决策引擎
+                {t("Decision engine")}
                 <select
                   value={mode}
                   disabled={comparison}
                   onChange={(event) => setMode(event.target.value as Mode)}
                 >
-                  <option value="rule">策略引擎</option>
+                  <option value="rule">{t("Rule engine")}</option>
                   <option value="llm">LLM Agent</option>
                 </select>
               </label>
             </div>
             <label className="field">
-              市场种子
+              {t("Market seeds")}
               <input
                 value={seeds}
                 required
@@ -530,13 +546,13 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
               />
             </label>
             <label className="field">
-              数据用途
+              {t("Data split")}
               <select
                 value={split}
                 onChange={(event) => setSplit(event.target.value)}
               >
-                <option value="holdout">保留集验收</option>
-                <option value="development">策略开发</option>
+                <option value="holdout">{t("Holdout validation")}</option>
+                <option value="development">{t("Development")}</option>
               </select>
             </label>
             {comparison ? (
@@ -544,11 +560,15 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                 {variants.map((variant, index) => (
                   <section className="experiment-variant" key={index}>
                     <div className="section-heading small">
-                      <h3>{index === 0 ? "基线方案" : `对照方案 ${index}`}</h3>
+                      <h3>
+                        {index === 0
+                          ? t("Baseline")
+                          : t("Variant {number}", { number: index })}
+                      </h3>
                       <button
                         type="button"
                         className="icon-button"
-                        aria-label={`移除方案 ${index + 1}`}
+                        aria-label={t("Remove variant {number}", { number: index + 1 })}
                         disabled={variants.length <= 2}
                         onClick={() =>
                           setVariants(
@@ -563,9 +583,9 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                     </div>
                     <div className="form-grid">
                       <label className="field">
-                        方案名称
+                        {t("Variant name")}
                         <input
-                          aria-label={`方案 ${index + 1} 名称`}
+                          aria-label={t("Variant {number} name", { number: index + 1 })}
                           required
                           maxLength={40}
                           value={variant.name}
@@ -575,9 +595,11 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                         />
                       </label>
                       <label className="field">
-                        经营策略
+                        {t("Strategy")}
                         <select
-                          aria-label={`方案 ${index + 1} 策略`}
+                          aria-label={t("Variant {number} strategy", {
+                            number: index + 1,
+                          })}
                           value={variant.strategy_id}
                           onChange={(event) =>
                             updateVariant(index, {
@@ -587,15 +609,17 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                         >
                           {availableStrategies.map((strategy) => (
                             <option key={strategy.id} value={strategy.id}>
-                              {strategy.name}
+                              {st(strategy.name)}
                             </option>
                           ))}
                         </select>
                       </label>
                       <label className="field">
-                        决策引擎
+                        {t("Decision engine")}
                         <select
-                          aria-label={`方案 ${index + 1} 引擎`}
+                          aria-label={t("Variant {number} engine", {
+                            number: index + 1,
+                          })}
                           value={variant.mode}
                           onChange={(event) =>
                             updateVariant(index, {
@@ -603,14 +627,16 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                             })
                           }
                         >
-                          <option value="rule">策略引擎</option>
+                          <option value="rule">{t("Rule engine")}</option>
                           <option value="llm">LLM Agent</option>
                         </select>
                       </label>
                       <label className="field">
-                        决策流程
+                        {t("Decision workflow")}
                         <select
-                          aria-label={`方案 ${index + 1} 流程`}
+                          aria-label={t("Variant {number} workflow", {
+                            number: index + 1,
+                          })}
                           value={variant.workflow}
                           onChange={(event) =>
                             updateVariant(index, {
@@ -619,16 +645,30 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                             })
                           }
                         >
-                          <option value="direct">{variant.mode === "llm" ? "标准决策" : "按规则决策"}</option>
-                          <option value="reviewed">{variant.mode === "llm" ? "试算与审核" : "规则试算与风险检查"}</option>
-                          <option value="adaptive">{variant.mode === "llm" ? "自主规划与动态审核" : "按风险触发规则试算"}</option>
+                          <option value="direct">
+                            {variant.mode === "llm"
+                              ? t("Standard decision")
+                              : t("Decide by rules")}
+                          </option>
+                          <option value="reviewed">
+                            {variant.mode === "llm"
+                              ? t("Projection and review")
+                              : t("Rule projection and risk check")}
+                          </option>
+                          <option value="adaptive">
+                            {variant.mode === "llm"
+                              ? t("Adaptive planning with dynamic review")
+                              : t("Risk-triggered rule projection")}
+                          </option>
                         </select>
                       </label>
                       {variant.mode === "llm" && (
                         <label className="field">
-                          模型连接
+                          {t("Model connection")}
                           <select
-                            aria-label={`方案 ${index + 1} 模型`}
+                            aria-label={t("Variant {number} model", {
+                              number: index + 1,
+                            })}
                             value={variant.model_profile_id || "default"}
                             onChange={(event) =>
                               updateVariant(index, {
@@ -640,7 +680,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                               ?.filter((profile) => profile.enabled)
                               .map((profile) => (
                                 <option key={profile.id} value={profile.id}>
-                                  {profile.name} · {profile.model}
+                                  {st(profile.name)} · {profile.model}
                                 </option>
                               ))}
                           </select>
@@ -648,7 +688,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                       )}
                     </div>
                     <AgentOptionsFields
-                      label={`方案 ${index + 1} `}
+                      label={t("Variant {number} ", { number: index + 1 })}
                       mode={variant.mode}
                       value={variant.agent_options}
                       onChange={(agent_options) =>
@@ -665,7 +705,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                       setVariants([
                         ...variants,
                         {
-                          name: `对照方案 ${variants.length}`,
+                          name: t("Variant {number}", { number: variants.length }),
                           strategy_id: "balanced",
                           mode: "rule",
                           workflow: "direct",
@@ -675,13 +715,15 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                     }
                   >
                     <Plus size={14} />
-                    添加对照方案
+                    {t("Add variant")}
                   </Button>
                 )}
               </div>
             ) : (
               <div className="field">
-                <span>参与策略 · {strategyIds.length} 项</span>
+                <span>
+                  {t("Strategies · {count} selected", { count: strategyIds.length })}
+                </span>
                 <div className="strategy-checkboxes">
                   {strategies.data.map((strategy) => (
                     <label
@@ -702,11 +744,11 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
                         }
                       />
                       <Avatar
-                        name={strategy.name}
+                        name={st(strategy.name)}
                         color={strategy.color}
                         small
                       />
-                      <span>{strategy.name}</span>
+                      <span>{st(strategy.name)}</span>
                     </label>
                   ))}
                 </div>
@@ -719,7 +761,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
               type="button"
               onClick={() => setCreating(false)}
             >
-              取消
+              {t("Cancel")}
             </Button>
             <Button
               type="submit"
@@ -730,7 +772,7 @@ export function ExperimentsPage({ catalog }: { catalog: Catalog }) {
               busy={busy}
             >
               <Play size={15} />
-              创建并运行
+              {t("Create and run")}
             </Button>
           </div>
         </form>

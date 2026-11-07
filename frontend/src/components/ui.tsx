@@ -9,6 +9,7 @@ import {
 } from "react";
 import { AlertCircle, Check, LoaderCircle, X } from "lucide-react";
 import type { ArenaStatus, Color } from "../types";
+import { t } from "../i18n";
 
 const ToastContext = createContext<(message: string, error?: boolean) => void>(
   () => {},
@@ -37,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         >
           {toast.error ? <AlertCircle size={18} /> : <Check size={18} />}
           <span>{toast.message}</span>
-          <button aria-label="关闭通知" onClick={() => setToast(null)}>
+          <button aria-label={t("Dismiss notification")} onClick={() => setToast(null)}>
             <X size={16} />
           </button>
         </div>
@@ -104,7 +105,7 @@ export function Modal({
         <h2>{title}</h2>
         <button
           className="icon-button"
-          aria-label="关闭对话框"
+          aria-label={t("Close dialog")}
           onClick={onClose}
         >
           <X size={20} />
@@ -116,18 +117,18 @@ export function Modal({
 }
 
 const STATUS: Record<ArenaStatus, string> = {
-  ready: "待开赛",
-  running: "进行中",
-  paused: "已暂停",
-  stepping: "结算中",
-  awaiting_approval: "待审批",
-  completed: "已完赛",
+  ready: "Not started",
+  running: "Running",
+  paused: "Paused",
+  stepping: "Settling",
+  awaiting_approval: "Pending approval",
+  completed: "Finished",
 };
 export function StatusBadge({ status }: { status: ArenaStatus }) {
   return (
     <span className={`status-badge status-${status}`}>
       <i />
-      {STATUS[status]}
+      {t(STATUS[status])}
     </span>
   );
 }
@@ -165,7 +166,7 @@ export function Loading() {
   return (
     <div className="loading-state">
       <LoaderCircle size={22} className="spin" />
-      加载中
+      {t("Loading")}
     </div>
   );
 }
@@ -181,7 +182,7 @@ export function ErrorState({
       <AlertCircle size={20} />
       <p>{message}</p>
       <Button variant="secondary" onClick={retry}>
-        重试
+        {t("Retry")}
       </Button>
     </div>
   );

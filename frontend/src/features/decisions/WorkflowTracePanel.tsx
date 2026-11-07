@@ -1,6 +1,15 @@
 import { CheckCircle2, RotateCcw } from "lucide-react";
 import { money, signedMoney } from "../../api";
 import type { WorkflowTrace } from "../../types";
+import { PRODUCTS } from "../arena/sceneState";
+import { st, t } from "../../i18n";
+
+const MESSAGE_ACTIONS: Record<string, string> = {
+  rfq: "Request for quote",
+  offer: "Offer",
+  accept: "Accept",
+  reject: "Reject",
+};
 
 export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
   if (
@@ -12,22 +21,21 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
   const selected = [...(trace.candidates || [])].sort(
     (a, b) => b.score - a.score,
   )[0]?.index;
-  const products: Record<string, string> = {
-    coffee: "咖啡",
-    oats: "燕麦",
-    bar: "能量棒",
-  };
+  const product = (id: string) =>
+    id in PRODUCTS ? t(PRODUCTS[id as keyof typeof PRODUCTS]) : id;
   return (
     <section className="planning-trace">
       {!!trace.candidates?.length && (
         <>
           <div className="section-heading small">
-            <h3>候选方案试算</h3>
-            <span>三种需求情景 · 预测值</span>
+            <h3>{t("Candidate projections")}</h3>
+            <span>{t("Three demand scenarios · forecasts")}</span>
           </div>
           {!!trace.candidates?.length && (
             <p className="candidate-explanation">
-              结合基准与低需求情景收益比较，同时惩罚预算和现金风险。人工修改后以最终提交方案为准。
+              {t(
+                "Ranks by base and low-demand profit while penalizing budget and cash risk. After a human edit, the submitted plan is what counts.",
+              )}
             </p>
           )}
           <div className="projection-list">
@@ -41,11 +49,11 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
                 }
               >
                 <div className="section-heading small">
-                  <h4>方案 {candidate.index + 1}</h4>
+                  <h4>{t("Plan {index}", { index: candidate.index + 1 })}</h4>
                   {selected === candidate.index && (
                     <span className="positive">
                       <CheckCircle2 size={13} />
-                      试算推荐
+                      {t("Recommended")}
                     </span>
                   )}
                 </div>
@@ -54,42 +62,50 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
                   <div className="candidate-actions">
                     {candidate.plan.products.map((item) => (
                       <span key={item.product_id}>
-                        {
-                          { coffee: "咖啡", oats: "燕麦", bar: "能量棒" }[
-                            item.product_id
-                          ]
-                        }{" "}
-                        ¥{money(item.price)} / 补 {item.purchase_quantity} 件
+                        {product(item.product_id)}{" "}
+                        {t("¥{price} / restock {count}", {
+                          price: money(item.price),
+                          count: item.purchase_quantity,
+                        })}
                       </span>
                     ))}
-                    <span>营销 ¥{money(candidate.plan.marketing_budget)}</span>
+                    <span>
+                      {t("Marketing ¥{amount}", {
+                        amount: money(candidate.plan.marketing_budget),
+                      })}
+                    </span>
                   </div>
                 )}
                 <div className="projection-metrics">
                   <span>
-                    基准净收益
+                    {t("Base-case net profit")}
                     <strong>{signedMoney(candidate.expected_profit)}</strong>
                   </span>
                   <span>
-                    最低现金<strong>¥{money(candidate.worst_cash)}</strong>
+                    {t("Lowest cash")}
+                    <strong>¥{money(candidate.worst_cash)}</strong>
                   </span>
                 </div>
                 <details>
-                  <summary>情景明细</summary>
-                  {candidate.supply_assumption && <p>{candidate.supply_assumption}</p>}
+                  <summary>{t("Scenario details")}</summary>
+                  {candidate.supply_assumption && (
+                    <p>{st(candidate.supply_assumption)}</p>
+                  )}
                   <div className="scenario-projections">
                     {candidate.scenarios.map((scenario) => (
                       <div key={scenario.name}>
-                        <b>{scenario.name}</b>
-                        <span>收益 {signedMoney(scenario.profit)}</span>
-                        <span>售出 {scenario.sold} 件</span>
-                        <span>余货 {scenario.inventory} 件</span>
+                        <b>{st(scenario.name)}</b>
+                        <span>{t("Profit {amount}", { amount: signedMoney(scenario.profit) })}</span>
+                        <span>{t("Sold {count} units", { count: scenario.sold })}</span>
+                        <span>{t("{count} units left", { count: scenario.inventory })}</span>
                       </div>
                     ))}
                   </div>
                 </details>
                 {candidate.risks.length > 0 && (
-                  <p className="negative">{candidate.risks.join("；")}</p>
+                  <p className="negative">
+                    {candidate.risks.map(st).join(t("; "))}
+                  </p>
                 )}
               </article>
             ))}
@@ -99,22 +115,22 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
       {!!trace.reviews?.length && (
         <>
           <div className="section-heading small">
-            <h3>独立审核</h3>
+            <h3>{t("Independent review")}</h3>
             <span>
               <RotateCcw size={13} />
-              修订 {trace.revisions || 0} 次
+              {t("{count} revisions", { count: trace.revisions || 0 })}
             </span>
           </div>
           <div className="review-list">
             {trace.reviews?.map((review, index) => (
               <article key={index}>
                 <span className={review.approved ? "positive" : "negative"}>
-                  {review.approved ? "已通过" : "退回修订"}
+                  {review.approved ? t("Approved") : t("Sent back for revision")}
                 </span>
                 <div>
-                  <p>{review.reason}</p>
+                  <p>{st(review.reason)}</p>
                   {review.issues.length > 0 && (
-                    <small>{review.issues.join("；")}</small>
+                    <small>{review.issues.map(st).join(t("; "))}</small>
                   )}
                 </div>
               </article>
@@ -124,16 +140,17 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
       )}
       {(trace.iterations?.length || 0) > 1 && (
         <details className="context-data">
-          <summary>修订历史</summary>
+          <summary>{t("Revision history")}</summary>
           {trace.iterations?.map((iteration) => (
             <div className="revision-history" key={iteration.revision}>
-              <b>第 {iteration.revision + 1} 版</b>
+              <b>{t("Version {number}", { number: iteration.revision + 1 })}</b>
               {iteration.candidates.map((candidate) => (
                 <p key={candidate.index}>
-                  方案 {candidate.index + 1} · {candidate.summary} · 预计{" "}
+                  {t("Plan {index}", { index: candidate.index + 1 })} ·{" "}
+                  {candidate.summary} · {t("projected")}{" "}
                   {signedMoney(candidate.expected_profit)}
                   {candidate.risks.length
-                    ? ` · ${candidate.risks.join("；")}`
+                    ? ` · ${candidate.risks.map(st).join(t("; "))}`
                     : ""}
                 </p>
               ))}
@@ -144,21 +161,26 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
       {!!trace.negotiation?.messages?.length && (
         <section className="negotiation-panel">
           <div className="section-heading small">
-            <h3>供应商谈判</h3>
-            <span>独立买卖双方 · 最多三轮</span>
+            <h3>{t("Supplier negotiation")}</h3>
+            <span>{t("Independent buyer and seller · up to three rounds")}</span>
           </div>
           {trace.negotiation.messages.map((session) => {
             const contract = trace.negotiation?.contracts?.find((item) => item.product_id === session.product_id);
-            const outcome = !session.agreed ? "谈判未达成" : !contract ? "价格谈妥" :
-              contract.status === "pending_allocation" ? "价格谈妥 · 待分货" :
-              contract.quantity === 0 ? "未进货 · 无可交付货量" :
-              contract.status === "fulfilled" ? `已到货 ${contract.quantity} 件` : `已预留 ${contract.quantity} 件`;
+            const outcome = !session.agreed
+              ? t("No deal reached")
+              : !contract
+                ? t("Price agreed")
+                : contract.status === "pending_allocation"
+                  ? t("Price agreed · awaiting allocation")
+                  : contract.quantity === 0
+                    ? t("Nothing received · no supply available")
+                    : contract.status === "fulfilled"
+                      ? t("{count} units delivered", { count: contract.quantity })
+                      : t("{count} units reserved", { count: contract.quantity });
             return (
             <details key={session.product_id}>
               <summary>
-                {{ coffee: "咖啡", oats: "燕麦", bar: "能量棒" }[
-                  session.product_id as "coffee"
-                ] || session.product_id}{" "}
+                {product(session.product_id)}{" "}
                 · {outcome}
               </summary>
               <div className="negotiation-messages">
@@ -167,20 +189,17 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
                     key={i}
                     className={`negotiation-message ${message.sender}`}
                   >
-                    <b>{message.sender === "supplier" ? "供应商" : "采购方"}</b>
+                    <b>{message.sender === "supplier" ? t("Supplier") : t("Buyer")}</b>
                     <span>
-                      {{
-                        rfq: "询价",
-                        offer: "报价",
-                        accept: "接受",
-                        reject: "拒绝",
-                      }[message.action as "offer"] || message.action}{" "}
-                      · {message.quantity} 件
+                      {MESSAGE_ACTIONS[message.action]
+                        ? t(MESSAGE_ACTIONS[message.action])
+                        : message.action}{" "}
+                      · {t("{count} units", { count: message.quantity })}
                       {message.unit_price
-                        ? ` · ¥${money(message.unit_price)}/件`
+                        ? ` · ${t("¥{price}/unit", { price: money(message.unit_price) })}`
                         : ""}
                     </span>
-                    <p>{message.reason}</p>
+                    <p>{st(message.reason)}</p>
                   </div>
                 ))}
               </div>
@@ -191,12 +210,30 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
             {trace.negotiation.contracts?.map((contract) => (
               <p key={contract.product_id}>
                 <strong>
-                  {products[contract.product_id] || contract.product_id}
+                  {product(contract.product_id)}
                 </strong>{" "}
-                {contract.status === "pending_allocation" ? `待分货 ${contract.requested_quantity} 件` :
-                  `${contract.status === "fulfilled" ? "到货" : "预留"} ${contract.quantity}/${contract.requested_quantity} 件`} ·
-                {contract.quantity > 0 && contract.status !== "pending_allocation" ? "进价" : "报价"} ¥{money(contract.unit_price)} · 市场参考 ¥
-                {money(contract.reference_price)}
+                {contract.status === "pending_allocation"
+                  ? t("Awaiting allocation of {count} units", {
+                      count: contract.requested_quantity,
+                    })
+                  : t(
+                      contract.status === "fulfilled"
+                        ? "Received {got}/{asked} units"
+                        : "Reserved {got}/{asked} units",
+                      { got: contract.quantity, asked: contract.requested_quantity },
+                    )}{" "}
+                ·{" "}
+                {t(
+                  contract.quantity > 0 &&
+                    contract.status !== "pending_allocation"
+                    ? "Unit cost ¥{price}"
+                    : "Quote ¥{price}",
+                  { price: money(contract.unit_price) },
+                )}{" "}
+                ·{" "}
+                {t("Market reference ¥{price}", {
+                  price: money(contract.reference_price),
+                })}
               </p>
             ))}
           </div>
@@ -205,21 +242,30 @@ export function WorkflowTracePanel({ trace }: { trace: WorkflowTrace }) {
       {!!trace.memory?.length && (
         <section className="experience-panel">
           <div className="section-heading small">
-            <h3>本次引用的历史经验</h3>
-            <span>本店已结算事实</span>
+            <h3>{t("Experience recalled this round")}</h3>
+            <span>{t("Settled facts from this store")}</span>
           </div>
           {trace.memory.map((memory) => (
             <details key={memory.evidence_id}>
               <summary>
-                证据 #{memory.evidence_id} · 第 {memory.round} 轮 · 实际收益{" "}
-                {signedMoney(memory.outcome.profit)}
+                {t("Evidence #{id} · round {round} · actual profit {profit}", {
+                  id: memory.evidence_id,
+                  round: memory.round,
+                  profit: signedMoney(memory.outcome.profit),
+                })}
               </summary>
               <p>{memory.lesson}</p>
               <p>
-                销量 {memory.outcome.sold} · 缺货品类 {memory.outcome.missed} ·{" "}
+                {t("Sold {sold} · stocked-out products {missed}", {
+                  sold: memory.outcome.sold,
+                  missed: memory.outcome.missed,
+                })}{" "}
+                ·{" "}
                 {memory.outcome.prediction_error === null
-                  ? "当时未记录预测"
-                  : `预测偏差 ${signedMoney(memory.outcome.prediction_error)}`}
+                  ? t("No forecast recorded at the time")
+                  : t("Forecast error {amount}", {
+                      amount: signedMoney(memory.outcome.prediction_error),
+                    })}
               </p>
               <p>{memory.action.summary}</p>
             </details>

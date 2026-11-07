@@ -19,6 +19,7 @@ import { money, signedMoney } from "../../api";
 import type { DecisionEvent, Merchant, ProductId } from "../../types";
 import { AnimatedValue } from "../decisions/AnimatedValue";
 import { actionLabel, PRODUCTS } from "./sceneState";
+import { locale, st, t } from "../../i18n";
 
 const ICONS = { coffee: Coffee, oats: Sprout, bar: Cookie };
 const PHASES = [
@@ -99,24 +100,24 @@ export function ShopScene({
   return (
     <article
       className={`theatre-shop store-${merchant.color} ${started ? "shop-working" : ""} ${settlement ? "shop-settled" : ""}`}
-      aria-label={`${merchant.name}商店`}
+      aria-label={t("{name} store", { name: st(merchant.name) })}
     >
       <header className="shop-identity">
         <span className="shop-agent">
           {merchant.mode === "llm" ? <Bot size={20} /> : <Cpu size={20} />}
         </span>
         <div>
-          <h3>{merchant.name}</h3>
+          <h3>{st(merchant.name)}</h3>
           <small>
             {merchant.mode === "llm"
               ? merchant.model_config?.model
-              : merchant.strategy_name}
+              : st(merchant.strategy_name)}
           </small>
         </div>
         <button
           className="icon-button"
           onClick={onDetail}
-          aria-label={`查看${merchant.name}决策详情`}
+          aria-label={t("View {name} decision details", { name: st(merchant.name) })}
         >
           <Eye size={17} />
         </button>
@@ -127,12 +128,12 @@ export function ShopScene({
         key={`${round}-${last?.id ?? 0}`}
       >
         <i className={started ? "action-pulse" : ""} />
-        <strong>{merchant.bankrupt ? "已退出经营" : actionLabel(last)}</strong>
+        <strong>{merchant.bankrupt ? t("Out of business") : actionLabel(last)}</strong>
         {last?.status === "completed" && <Check size={14} />}
       </div>
       <div
         className="shop-phase-track"
-        aria-label={`当前阶段：${actionLabel(last)}`}
+        aria-label={t("Current stage: {stage}", { stage: actionLabel(last) })}
       >
         {PHASES.map((node, index) => (
           <i
@@ -177,17 +178,24 @@ export function ShopScene({
               <div className="visual-product" key={stock.product_id}>
                 <div className="product-caption">
                   <Icon size={15} />
-                  <span>{stock.name}</span>
+                  <span>{st(stock.name)}</span>
                   <b
                     key={price}
-                    title={planned ? "计划对顾客销售的单价，结算时生效" : "对顾客销售的单价"}
+                    title={
+                      planned
+                        ? t("Planned unit price to customers; takes effect at settlement")
+                        : t("Unit price to customers")
+                    }
                   >
-                    {planned ? "拟售价" : "售价"} ¥{money(price)}
+                    {planned ? t("Planned price") : t("Price")} ¥{money(price)}
                   </b>
                 </div>
                 <div
                   className="product-shelf"
-                  aria-label={`${stock.name}库存 ${stock.quantity} 件`}
+                  aria-label={t("{product} stock {count} units", {
+                    product: st(stock.name),
+                    count: stock.quantity,
+                  })}
                 >
                   {Array.from({ length: 10 }, (_, i) => (
                     <span
@@ -204,7 +212,7 @@ export function ShopScene({
                   <strong>
                     <AnimatedValue
                       value={stock.quantity}
-                      format={(value) => `库存 ${value} 件`}
+                      format={(value) => t("Stock {count} units", { count: value })}
                     />
                   </strong>
                   {settlement ? (
@@ -218,27 +226,48 @@ export function ShopScene({
                     </span>
                   ) : action ? (
                     <span className="planned-action">
-                      计划进货 {action.purchase_quantity} 件
+                      {t("Plan to buy {count} units", { count: action.purchase_quantity })}
                     </span>
                   ) : (
                     null
                   )}
                 </div>
                 {delivery && (
-                  <div className="product-delivery" aria-label={`${stock.name}采购结果`}>
+                  <div className="product-delivery" aria-label={t("{product} purchase result", { product: st(stock.name) })}>
                     {delivery.quantity > 0 ? (
                       <>
-                        <b>进价 ¥{money(delivery.unit_price!)}</b>
-                        <span>到货 {delivery.quantity}/{delivery.requested_quantity} 件</span>
+                        <b>{t("Unit cost ¥{price}", { price: money(delivery.unit_price!) })}</b>
+                        <span>
+                          {t("Received {got}/{asked} units", {
+                            got: delivery.quantity,
+                            asked: delivery.requested_quantity,
+                          })}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <b>{delivery.status === "not_ordered" ? "未计划进货" : "未进货"}</b>
-                        <span>{delivery.status === "rejected" ? "谈判未达成" :
-                          delivery.status === "not_ordered" ? "" : "无可交付货量"}</span>
-                        {delivery.requested_quantity > 0 && <span>到货 0/{delivery.requested_quantity} 件</span>}
+                        <b>
+                          {delivery.status === "not_ordered"
+                            ? t("No purchase planned")
+                            : t("Nothing received")}
+                        </b>
+                        <span>
+                          {delivery.status === "rejected"
+                            ? t("No deal reached")
+                            : delivery.status === "not_ordered"
+                              ? ""
+                              : t("No supply available")}
+                        </span>
+                        {delivery.requested_quantity > 0 && (
+                          <span>
+                            {t("Received {got}/{asked} units", {
+                              got: 0,
+                              asked: delivery.requested_quantity,
+                            })}
+                          </span>
+                        )}
                         {delivery.status !== "not_ordered" && delivery.unit_price !== null && (
-                          <span>报价 ¥{money(delivery.unit_price)}</span>
+                          <span>{t("Quote ¥{price}", { price: money(delivery.unit_price) })}</span>
                         )}
                       </>
                     )}
@@ -273,7 +302,7 @@ export function ShopScene({
         )}
       </div>
       <div className="shop-wallet">
-        <span>可用现金</span>
+        <span>{t("Cash")}</span>
         <strong>
           <AnimatedValue
             value={merchant.cash}
@@ -289,15 +318,15 @@ export function ShopScene({
           <>
             <span>
               <Truck size={14} />
-              进货 <b>{purchased}</b>
+              {t("Bought")} <b>{purchased}</b>
             </span>
             <span>
               <ShoppingBag size={14} />
-              售出 <b>{sold}</b>
+              {t("Sold")} <b>{sold}</b>
             </span>
             <strong className={metrics.profit >= 0 ? "positive" : "negative"}>
               {signedMoney(metrics.profit)}
-              <small>本轮净收益</small>
+              <small>{t("Round profit")}</small>
             </strong>
           </>
         ) : (
@@ -305,41 +334,57 @@ export function ShopScene({
             <Package size={16} />
             <span>
               {plan
-                ? `计划采购 ${plan.products.reduce((sum, item) => sum + item.purchase_quantity, 0)} 件`
-                : "等待经营方案"}
+                ? t("Planning to buy {count} units", {
+                    count: plan.products.reduce(
+                      (sum, item) => sum + item.purchase_quantity,
+                      0,
+                    ),
+                  })
+                : t("Waiting for a plan")}
             </span>
-            <small>尚未结算</small>
+            <small>{t("Not settled yet")}</small>
           </>
         )}
       </div>
       {settlement && metrics ? (
-        <div className="shop-profit-breakdown" aria-label="本轮收益构成">
-          <span>销售毛利 <b>{signedMoney(metrics.revenue - metrics.cost_of_goods)}</b></span>
-          <span>营销 <b>−¥{money(metrics.marketing)}</b></span>
-          <span>租金及持有费 <b>−¥{money(metrics.operating_cost)}</b></span>
+        <div className="shop-profit-breakdown" aria-label={t("This round's profit breakdown")}>
+          <span>
+            {t("Gross margin")}{" "}
+            <b>{signedMoney(metrics.revenue - metrics.cost_of_goods)}</b>
+          </span>
+          <span>
+            {t("Marketing spend")} <b>−¥{money(metrics.marketing)}</b>
+          </span>
+          <span>
+            {t("Rent and holding")} <b>−¥{money(metrics.operating_cost)}</b>
+          </span>
         </div>
       ) : quote ? (
         <div className="quote-visual">
           <div className="quote-strip" key={quote.id}>
             <span>
-              {PRODUCTS[quote.payload.product_id as ProductId]} ·{" "}
+              {t(PRODUCTS[quote.payload.product_id as ProductId])} ·{" "}
               {quote.payload.message!.sender === "supplier"
-                ? "供应商"
-                : "采购方"}
+                ? t("Supplier")
+                : t("Buyer")}
             </span>
             {quote.payload.message!.action !== "reject" && (
-              <strong>报价 ¥{money(quote.payload.message!.unit_price!)}</strong>
+              <strong>
+                {t("Quote ¥{price}", {
+                  price: money(quote.payload.message!.unit_price!),
+                })}
+              </strong>
             )}
             <ArrowRight size={14} />
-            <span title={quote.payload.message!.reason}>
+            <span title={st(quote.payload.message!.reason)}>
               {quote.payload.message!.action === "accept"
-                ? "价格谈妥"
+                ? t("Price agreed")
                 : quote.payload.message!.action === "reject"
-                  ? "拒绝交易"
-                  : "协商中"}
+                  ? t("Deal declined")
+                  : t("Negotiating")}
             </span>
           </div>
-          <div className="quote-axis" aria-label="本商品协商报价轨迹">
+          <div className="quote-axis" aria-label={t("Quote history for this product")}>
             {productQuotes.map((event, index) => (
               <i
                 key={event.id}
@@ -348,19 +393,19 @@ export function ShopScene({
                   left: `${pricePosition(event.payload.message!.unit_price!)}%`,
                   opacity: (index + 1) / productQuotes.length,
                 }}
-                title={`${event.payload.message!.sender === "buyer" ? "采购方" : "供应商"} ¥${money(event.payload.message!.unit_price!)}`}
+                title={`${event.payload.message!.sender === "buyer" ? t("Buyer") : t("Supplier")} ¥${money(event.payload.message!.unit_price!)}`}
               />
             ))}
           </div>
         </div>
       ) : candidates?.length ? (
-        <div className="candidate-mini" aria-label="候选方案预计收益">
+        <div className="candidate-mini" aria-label={t("Projected profit of candidate plans")}>
           {candidates.map((candidate) => (
             <div key={candidate.index} title={candidate.summary}>
               <span>
                 {candidates.length === 1
-                  ? "预计净收益"
-                  : `方案 ${candidate.index + 1} · 预计`}
+                  ? t("Expected net profit")
+                  : t("Plan {index} · projected", { index: candidate.index + 1 })}
               </span>
               <strong>{signedMoney(candidate.expected_profit)}</strong>
               <i
@@ -374,17 +419,17 @@ export function ShopScene({
       ) : (
         <div className="shop-hint">
           {merchant.mode === "llm"
-            ? "模型按市场信息自主经营"
-            : "规则策略 · 可复现对照"}
+            ? t("The model runs the store from market information")
+            : t("Rule strategy · reproducible baseline")}
         </div>
       )}
       <footer className="shop-telemetry">
         {merchant.mode === "llm" ? <>
-          <span>{tools} 次模型工具调用</span>
-          <span>{tokens.toLocaleString()} tokens</span>
-        </> : <span>规则执行 · 无模型调用</span>}
+          <span>{t("{count} model tool calls", { count: tools })}</span>
+          <span>{tokens.toLocaleString(locale())} tokens</span>
+        </> : <span>{t("Rule execution · no model calls")}</span>}
         <button onClick={onDetail}>
-          详情 <ChevronRight size={12} />
+          {t("Details")} <ChevronRight size={12} />
         </button>
       </footer>
     </article>

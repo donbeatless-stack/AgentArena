@@ -7,7 +7,8 @@
     "dev": "vite --host 127.0.0.1 --port 5178",
     "build": "tsc -b && vite build",
     "test:browser": "node tests/browser.mjs",
-    "preview": "vite preview --host 127.0.0.1 --port 5178"
+    "preview": "vite preview --host 127.0.0.1 --port 5178",
+    "test:i18n": "node tests/i18n-check.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.511.0",

@@ -30,6 +30,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { api, money, signedMoney, useResource } from "../api";
+import { st, t } from "../i18n";
 import { ProfitChart } from "../components/Charts";
 import { ExecutionPanel } from "../components/ExecutionPanel";
 import {
@@ -134,33 +135,33 @@ export function ArenaPage() {
       <div className="arena-breadcrumb">
         <Link to="/">
           <ArrowLeft size={15} />
-          竞技场
+          {t("Arena")}
         </Link>
         <ChevronRight size={13} />
-        <span>对局 {String(arena.id).padStart(3, "0")}</span>
+        <span>{t("Match {id}", { id: String(arena.id).padStart(3, "0") })}</span>
       </div>
       <div className="page-heading arena-page-heading">
         <div>
-          <h1>{arena.name}</h1>
+          <h1>{st(arena.name)}</h1>
           <div className="arena-subtitle">
             <StatusBadge status={latest.status} />
-            <span>{snapshot.market.scenario_name}</span>
-            <span>种子 {arena.seed}</span>
-            <span>{snapshot.merchants.length} 家商店</span>
+            <span>{st(snapshot.market.scenario_name)}</span>
+            <span>{t("Seed {seed}", { seed: arena.seed })}</span>
+            <span>{t("{count} stores", { count: snapshot.merchants.length })}</span>
           </div>
         </div>
         <div className="heading-actions">
           <details className="export-menu">
             <summary className="button button-secondary">
               <Download size={16} />
-              导出
+              {t("Export")}
             </summary>
             <div>
               <a href={`/api/arenas/${id}/export?format=json`} download>
-                完整比赛 · JSON
+                {t("Full match · JSON")}
               </a>
               <a href={`/api/arenas/${id}/export?format=csv`} download>
-                交易账本 · CSV
+                {t("Ledger · CSV")}
               </a>
             </div>
           </details>
@@ -170,7 +171,7 @@ export function ArenaPage() {
             busy={busy}
           >
             <RotateCcw size={15} />
-            再赛一场
+            {t("Rematch")}
           </Button>
         </div>
       </div>
@@ -197,18 +198,18 @@ export function ArenaPage() {
               }}
             >
               <Radio size={14} />
-              返回当前
+              {t("Back to current")}
             </button>
           )}
           <select
-            aria-label="比赛速度"
+            aria-label={t("Match speed")}
             value={speed}
             onChange={(event) => setSpeed(+event.target.value)}
             disabled={live}
           >
-            <option value={1}>1× 速度</option>
-            <option value={2}>2× 速度</option>
-            <option value={4}>4× 速度</option>
+            <option value={1}>{t("{speed}× speed", { speed: 1 })}</option>
+            <option value={2}>{t("{speed}× speed", { speed: 2 })}</option>
+            <option value={4}>{t("{speed}× speed", { speed: 4 })}</option>
           </select>
           <Button
             variant="secondary"
@@ -224,12 +225,12 @@ export function ArenaPage() {
             }
           >
             <SkipForward size={16} />
-            单步
+            {t("Step")}
           </Button>
           {finished ? (
             <span className="finished-label">
               <Flag size={16} />
-              本场已结束
+              {t("Match finished")}
             </span>
           ) : (
             <Button
@@ -249,12 +250,12 @@ export function ArenaPage() {
               {live ? (
                 <>
                   <Pause size={16} />
-                  暂停比赛
+                  {t("Pause match")}
                 </>
               ) : (
                 <>
                   <Play size={16} fill="currentColor" />
-                  {latest.current_round ? "继续比赛" : "开始比赛"}
+                  {latest.current_round ? t("Resume match") : t("Start match")}
                 </>
               )}
             </Button>
@@ -263,9 +264,9 @@ export function ArenaPage() {
       </div>
       {latest.error && (
         <div className="arena-error" role="alert">
-          <span>{latest.error}</span>
+          <span>{st(latest.error)}</span>
           <Link to="/settings">
-            运行设置
+            {t("Settings")}
             <ArrowUpRight size={14} />
           </Link>
         </div>
@@ -284,15 +285,15 @@ export function ArenaPage() {
             <div>
               <strong>
                 {snapshot.round === 0
-                  ? "市场即将开盘"
-                  : snapshot.market.event.name}
+                  ? t("Market opening soon")
+                  : st(snapshot.market.event.name)}
               </strong>
-              <span>{snapshot.market.event.impact}</span>
+              <span>{st(snapshot.market.event.impact)}</span>
             </div>
             <span className="market-signal">
               <i />
               {replayRound !== null
-                ? "历史行情"
+                ? t("Historical market")
                 : live
                   ? "LIVE MARKET"
                   : "MARKET SNAPSHOT"}
@@ -300,7 +301,7 @@ export function ArenaPage() {
           </div>
           <div className="metric-grid arena-metrics">
             <Metric
-              label="本轮市场营收"
+              label={t("Market revenue this round")}
               value={
                 <>
                   <span className="currency">¥</span>
@@ -310,17 +311,17 @@ export function ArenaPage() {
               icon={<ShoppingBag size={17} />}
             />
             <Metric
-              label="本轮成交"
+              label={t("Units sold this round")}
               value={
                 <>
                   {snapshot.totals.sold}
-                  <span className="metric-unit">件</span>
+                  <span className="metric-unit">{t("units")}</span>
                 </>
               }
               icon={<Package size={17} />}
             />
             <Metric
-              label="需求满足率"
+              label={t("Demand fill rate")}
               value={
                 <>
                   {snapshot.totals.demand
@@ -335,22 +336,22 @@ export function ArenaPage() {
               icon={<Users size={17} />}
             />
             <Metric
-              label="本轮领跑"
-              value={<span className="leader-metric">{merchants[0].name}</span>}
+              label={t("Round leader")}
+              value={<span className="leader-metric">{st(merchants[0].name)}</span>}
               icon={<Trophy size={17} />}
             />
           </div>
         </>
       )}
-      <div className="arena-tabs" role="tablist" aria-label="赛场视图">
+      <div className="arena-tabs" role="tablist" aria-label={t("Arena views")}>
         {[
-          ["theatre", "全景赛场", ShoppingBag],
-          ["overview", "经营数据", BarChartIcon],
-          ["live", "决策现场", Radio],
-          ["decisions", "决策轨迹", Workflow],
-          ["ledger", "交易账本", ListOrdered],
-          ["execution", "执行记录", Radio],
-          ["branch", "分叉对照", Layers3],
+          ["theatre", "Market panorama", ShoppingBag],
+          ["overview", "Business data", BarChartIcon],
+          ["live", "Decision live", Radio],
+          ["decisions", "Decision trace", Workflow],
+          ["ledger", "Ledger", ListOrdered],
+          ["execution", "Execution log", Radio],
+          ["branch", "Fork comparison", Layers3],
         ].map(([key, label, Icon]) => {
           const TabIcon = Icon as typeof Workflow;
           return (
@@ -361,7 +362,7 @@ export function ArenaPage() {
               onClick={() => setTab(key as string)}
             >
               <TabIcon size={16} />
-              {label as string}
+              {t(label as string)}
               {key === "decisions" && arena.decisions.length > 0 && (
                 <span>{arena.decisions.length}</span>
               )}
@@ -394,10 +395,12 @@ export function ArenaPage() {
             <section className="panel profit-panel">
               <div className="panel-heading">
                 <div>
-                  <h2>净收益走势</h2>
-                  <span>累计经营收益 · 元</span>
+                  <h2>{t("Net profit trend")}</h2>
+                  <span>{t("Cumulative profit · ¥")}</span>
                 </div>
-                <span className="subtle-chip">{snapshot.round} 个回合</span>
+                <span className="subtle-chip">
+                  {t("{count} rounds played", { count: snapshot.round })}
+                </span>
               </div>
               <ProfitChart
                 history={arena.history}
@@ -408,7 +411,7 @@ export function ArenaPage() {
             </section>
             <section className="panel standings-panel">
               <div className="panel-heading">
-                <h2>实时排名</h2>
+                <h2>{t("Live standings")}</h2>
                 <Trophy size={17} />
               </div>
               <div className="standings-list">
@@ -417,10 +420,10 @@ export function ArenaPage() {
                     <span className={`rank-number rank-${index}`}>
                       {String(index + 1).padStart(2, "0")}
                     </span>
-                    <Avatar name={merchant.name} color={merchant.color} small />
+                    <Avatar name={st(merchant.name)} color={merchant.color} small />
                     <span className="standings-name">
-                      {merchant.name}
-                      <small>{merchant.strategy_name}</small>
+                      {st(merchant.name)}
+                      <small>{st(merchant.strategy_name)}</small>
                     </span>
                     <span className="standings-result">
                       <b
@@ -440,12 +443,14 @@ export function ArenaPage() {
               </div>
               <div className="standings-footer">
                 <CircleDollarSign size={15} />
-                初始资产 ¥{money(arena.initial_capital)} / 店
+                {t("Starting assets ¥{amount} / store", {
+                  amount: money(arena.initial_capital),
+                })}
               </div>
             </section>
           </div>
           <div className="section-heading">
-            <h2>商店经营</h2>
+            <h2>{t("Store operations")}</h2>
             <span className="muted">
               ROUND {String(snapshot.round).padStart(2, "0")}
             </span>
@@ -457,8 +462,8 @@ export function ArenaPage() {
           </div>
           <section className="panel supply-panel">
             <div className="panel-heading">
-              <h2>批发市场</h2>
-              <span>本轮供货与需求预测</span>
+              <h2>{t("Wholesale market")}</h2>
+              <span>{t("Supply and demand forecast this round")}</span>
             </div>
             <div className="supply-grid">
               {snapshot.market.products.map((product) => (
@@ -467,21 +472,21 @@ export function ArenaPage() {
                     <Package size={20} />
                   </span>
                   <div>
-                    <strong>{product.name}</strong>
-                    <span>进价 ¥{money(product.cost)}</span>
+                    <strong>{st(product.name)}</strong>
+                    <span>{t("Unit cost ¥{price}", { price: money(product.cost) })}</span>
                   </div>
                   <span>
-                    供货
+                    {t("Supply")}
                     <b>
                       {product.supply}
-                      <small> {product.unit}</small>
+                      <small> {st(product.unit)}</small>
                     </b>
                   </span>
                   <span>
-                    需求
+                    {t("Demand")}
                     <b>
                       {product.demand}
-                      <small> {product.unit}</small>
+                      <small> {st(product.unit)}</small>
                     </b>
                   </span>
                 </div>
@@ -513,11 +518,11 @@ export function ArenaPage() {
         <div className="replay-bar">
           <span className="replay-label">
             <RotateCcw size={15} />
-            回合回放
+            {t("Round replay")}
           </span>
           <button
             className="icon-button"
-            aria-label="上一回合"
+            aria-label={t("Previous round")}
             disabled={snapshot.round === 0}
             onClick={() => {
               setPlaying(false);
@@ -528,7 +533,7 @@ export function ArenaPage() {
           </button>
           <button
             className="replay-play"
-            aria-label={playing ? "暂停回放" : "播放回放"}
+            aria-label={playing ? t("Pause replay") : t("Play replay")}
             disabled={latest.current_round === 0}
             onClick={() => {
               if (!playing && replayRound === null) setReplayRound(0);
@@ -542,7 +547,7 @@ export function ArenaPage() {
             )}
           </button>
           <input
-            aria-label="回放回合"
+            aria-label={t("Replay round")}
             type="range"
             min={0}
             max={latest.current_round}
@@ -558,7 +563,7 @@ export function ArenaPage() {
           </span>
           <button
             className="icon-button"
-            aria-label="下一回合"
+            aria-label={t("Next round")}
             disabled={snapshot.round >= latest.current_round}
             onClick={() => {
               setPlaying(false);
@@ -577,7 +582,7 @@ export function ArenaPage() {
             }}
           >
             <i />
-            当前
+            {t("Current")}
           </button>
         </div>
       )}

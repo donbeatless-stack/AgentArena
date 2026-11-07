@@ -347,6 +347,27 @@ textarea {
   letter-spacing: 1px;
   color: #6a6c75;
 }
+.language-toggle {
+  min-width: 44px;
+  height: 31px;
+  padding: 0 10px;
+  border: 1px solid #e3e1ec;
+  border-radius: 10px;
+  background: #fff;
+  color: #5f6070;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.language-toggle:hover {
+  border-color: #c9bfec;
+  color: #7859bd;
+}
+.language-toggle:focus-visible {
+  outline: 2px solid #8063e5;
+  outline-offset: 2px;
+}
 .topbar-avatar {
   display: grid;
   place-items: center;

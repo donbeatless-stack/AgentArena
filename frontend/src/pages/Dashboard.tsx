@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { count, date, money, signedMoney, useResource } from "../api";
 import type { Catalog, Overview } from "../types";
+import { st, t } from "../i18n";
 import { CreateArena } from "../components/CreateArena";
 import {
   Avatar,
@@ -44,13 +45,13 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
         <div>
           <div className="eyebrow">THE PLAYING FIELD</div>
           <h1>
-            竞技场
+            {t("Arena")}
             <span className="title-dot" />
           </h1>
         </div>
         <Button onClick={() => setCreating(true)}>
           <Plus size={17} />
-          创建对局
+          {t("New match")}
         </Button>
       </div>
       <div className="dashboard-hero">
@@ -60,24 +61,25 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
             AGENT ECONOMY
           </span>
           <h2>
-            让 Agent 开店，
+            {t("Let agents run the shops,")}
             <br />
-            看决策如何变成<span>收益。</span>
+            {t("watch decisions turn into ")}
+            <span>{t("profit.")}</span>
           </h2>
           <div className="hero-facts">
             <span>
-              ¥10,000 <small>初始资金 / 店</small>
+              ¥10,000 <small>{t("starting cash / store")}</small>
             </span>
             <span>
-              20 <small>经营回合</small>
+              20 <small>{t("rounds")}</small>
             </span>
             <span>
-              3 <small>参赛商店</small>
+              3 <small>{t("competing stores")}</small>
             </span>
           </div>
           <div className="hero-actions">
             <Button variant="dark" onClick={() => setCreating(true)}>
-              开启一场竞争
+              {t("Start a competition")}
               <ArrowUpRight size={17} />
             </Button>
             {data.arenas.some((arena) => arena.current_round > 0) && (
@@ -85,7 +87,7 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
                 className="hero-watch"
                 to={`/arenas/${data.arenas.find((arena) => arena.current_round > 0)!.id}`}
               >
-                观看经营回放 <ArrowRight size={16} />
+                {t("Watch a replay")} <ArrowRight size={16} />
               </Link>
             )}
           </div>
@@ -110,40 +112,44 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
           </div>
           <span className="floating-label float-profit">
             <ArrowUpRight size={14} />
-            利润增长
+            {t("Profit up")}
           </span>
           <span className="floating-label float-live">
             <i />
-            市场开放
+            {t("Market open")}
           </span>
           <span className="hero-grid-line" />
         </div>
       </div>
       <div className="metric-grid dashboard-metrics">
         <Metric
-          label="累计对局"
+          label={t("Matches")}
           value={data.stats.arenas.toString().padStart(2, "0")}
           suffix={
             <>
-              <span className="positive">{data.stats.active} 场进行中</span>
-              <span>全部市场</span>
+              <span className="positive">
+                {t("{count} running", { count: data.stats.active })}
+              </span>
+              <span>{t("All markets")}</span>
             </>
           }
           icon={<Flag size={17} />}
         />
         <Metric
-          label="已完成回合"
+          label={t("Rounds played")}
           value={count(data.stats.rounds)}
           suffix={
             <>
-              <span>{data.stats.completed} 场已完赛</span>
+              <span>
+                {t("{count} finished", { count: data.stats.completed })}
+              </span>
               <BarChart3 size={15} />
             </>
           }
           icon={<CircleDot size={17} />}
         />
         <Metric
-          label="市场累计营收"
+          label={t("Total market revenue")}
           value={
             <>
               <span className="currency">¥</span>
@@ -152,18 +158,18 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
           }
           suffix={
             <>
-              <span>所有商店销售合计</span>
+              <span>{t("Sales across all stores")}</span>
               <ArrowUpRight size={15} />
             </>
           }
           icon={<ShoppingBag size={17} />}
         />
         <Metric
-          label="可用策略"
+          label={t("Strategies available")}
           value={data.strategies.length.toString().padStart(2, "0")}
           suffix={
             <Link to="/strategies">
-              进入策略库
+              {t("Open strategies")}
               <ArrowRight size={14} />
             </Link>
           }
@@ -172,20 +178,21 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
       </div>
       <div className="section-heading">
         <h2>
-          我的对局<span className="number-chip">{data.arenas.length}</span>
+          {t("My matches")}
+          <span className="number-chip">{data.arenas.length}</span>
         </h2>
         <div className="segmented">
           {[
-            ["all", "全部"],
-            ["live", "未完赛"],
-            ["completed", "已完赛"],
+            ["all", "All"],
+            ["live", "In progress"],
+            ["completed", "Finished"],
           ].map(([key, label]) => (
             <button
               key={key}
               className={filter === key ? "active" : ""}
               onClick={() => setFilter(key)}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -204,22 +211,22 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
                 <ArrowUpRight size={17} />
               </span>
             </div>
-            <h3>{arena.name}</h3>
+            <h3>{st(arena.name)}</h3>
             <p className="arena-card-meta">
-              {
+              {st(
                 catalog.scenarios.find((item) => item.id === arena.scenario)
-                  ?.name
-              }
+                  ?.name,
+              )}
               <span />
-              {arena.merchants.length} 家商店
+              {t("{count} stores", { count: arena.merchants.length })}
               <span />
-              种子 {arena.seed}
+              {t("Seed {seed}", { seed: arena.seed })}
             </p>
             <div className="arena-card-stores">
               {arena.merchants.map((merchant) => (
                 <div key={merchant.id}>
-                  <Avatar name={merchant.name} color={merchant.color} small />
-                  <span>{merchant.name}</span>
+                  <Avatar name={st(merchant.name)} color={merchant.color} small />
+                  <span>{st(merchant.name)}</span>
                   <small
                     className={merchant.profit >= 0 ? "positive" : "negative"}
                   >
@@ -237,11 +244,13 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
             </div>
             <div className="arena-card-bottom">
               <span>
-                回合 <b>{arena.current_round}</b> / {arena.total_rounds}
+                {t("Round")} <b>{arena.current_round}</b> / {arena.total_rounds}
               </span>
               <span>
                 <Trophy size={13} />
-                {arena.current_round > 0 ? `${arena.leader} 领跑` : "等待开赛"}
+                {arena.current_round > 0
+                  ? t("{name} leads", { name: st(arena.leader) })
+                  : t("Waiting to start")}
               </span>
             </div>
           </Link>
@@ -250,15 +259,15 @@ export function Dashboard({ catalog }: { catalog: Catalog }) {
           <span>
             <Plus size={26} />
           </span>
-          <strong>新的市场，新的可能</strong>
+          <strong>{t("New market, new possibilities")}</strong>
           <small>
-            创建对局
+            {t("New match")}
             <ArrowRight size={14} />
           </small>
         </button>
       </div>
       {matches.length === 0 && data.arenas.length > 0 && (
-        <Empty title="暂无此类对局" />
+        <Empty title={t("No matches here yet")} />
       )}
       <div className="bottom-notes">
         <span>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
+import { t } from "../../i18n";
 import type { Arena, DecisionEvent } from "../../types";
 
 export function useDecisionEvents(
@@ -36,7 +37,7 @@ export function useDecisionEvents(
       };
       source.onerror = () => {
         setConnected(false);
-        setError("连接恢复中，已记录的执行事件会自动补齐");
+        setError(t("Reconnecting; recorded execution events will be backfilled automatically."));
       };
       source.addEventListener("decision", (event) => {
         const item = JSON.parse(

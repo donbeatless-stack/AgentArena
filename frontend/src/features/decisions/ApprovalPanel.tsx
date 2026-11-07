@@ -3,6 +3,8 @@ import { useState } from "react";
 import { api, money } from "../../api";
 import { Button, useToast } from "../../components/ui";
 import type { Approval, Arena, Decision } from "../../types";
+import { PRODUCTS } from "../arena/sceneState";
+import { st, t } from "../../i18n";
 
 function ApprovalCard({
   approval,
@@ -44,35 +46,35 @@ function ApprovalCard({
       <div className="section-heading small">
         <h3>
           <ShieldCheck size={18} />
-          {approval.name}需要你的决定
+          {t("{name} needs your decision", { name: st(approval.name) })}
         </h3>
-        <span>第 {approval.round_number} 轮</span>
+        <span>{t("Round {round}", { round: approval.round_number })}</span>
       </div>
       <p>{approval.proposal.plan.summary}</p>
       <p className="muted">
-        预计支出 ¥{money(approval.proposal.spend)} · 当前现金 ¥
-        {money(approval.proposal.cash)}
+        {t("Planned spend ¥{spend} · cash on hand ¥{cash}", {
+          spend: money(approval.proposal.spend),
+          cash: money(approval.proposal.cash),
+        })}
       </p>
       <details>
-        <summary>修改本轮方案</summary>
+        <summary>{t("Edit this round's plan")}</summary>
         <div className="approval-edit">
           {plan.products.map((action, index) => (
             <div key={action.product_id}>
               <strong>
-                {
-                  { coffee: "咖啡", oats: "燕麦", bar: "能量棒" }[
-                    action.product_id
-                  ]
-                }
+                {t(PRODUCTS[action.product_id])}
               </strong>
               <label>
-                定价（元）
+                {t("Price (¥)")}
                 <input
                   type="number"
                   min="1"
                   max="100"
                   step="0.01"
-                  aria-label={`${action.product_id}审批定价`}
+                  aria-label={t("{product} approval price", {
+                    product: action.product_id,
+                  })}
                   value={action.price / 100}
                   onChange={(event) =>
                     setPlan({
@@ -90,12 +92,14 @@ function ApprovalCard({
                 />
               </label>
               <label>
-                补货
+                {t("Restock")}
                 <input
                   type="number"
                   min="0"
                   max="250"
-                  aria-label={`${action.product_id}审批补货`}
+                  aria-label={t("{product} approval restock", {
+                    product: action.product_id,
+                  })}
                   value={action.purchase_quantity}
                   onChange={(event) =>
                     setPlan({
@@ -112,7 +116,7 @@ function ApprovalCard({
             </div>
           ))}
           <label>
-            营销预算（元）
+            {t("Marketing budget (¥)")}
             <input
               type="number"
               min="0"
@@ -130,27 +134,27 @@ function ApprovalCard({
         </div>
       </details>
       <label className="field">
-        审批意见
+        {t("Reviewer note")}
         <input
           value={reason}
           maxLength={400}
           onChange={(event) => setReason(event.target.value)}
-          placeholder="退回时可说明希望调整的方向"
+          placeholder={t("When rejecting, say what should change")}
         />
       </label>
       <div className="heading-actions">
         <Button busy={busy} onClick={() => send("approve")}>
-          批准并继续
+          {t("Approve and continue")}
         </Button>
         <Button
           variant="secondary"
           disabled={busy}
           onClick={() => send("modify")}
         >
-          采用修改并继续
+          {t("Apply edits and continue")}
         </Button>
         <Button variant="ghost" disabled={busy} onClick={() => send("reject")}>
-          退回重新规划
+          {t("Reject and replan")}
         </Button>
       </div>
     </article>

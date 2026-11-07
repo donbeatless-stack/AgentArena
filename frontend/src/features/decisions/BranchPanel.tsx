@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, signedMoney, useResource } from "../../api";
 import { Button, useToast } from "../../components/ui";
 import type { Arena, MerchantInput, Strategy } from "../../types";
+import { st, t } from "../../i18n";
 
 interface Comparison {
   parent: { id: number; name: string } | null;
@@ -93,18 +94,20 @@ export function BranchPanel({
     <section className="panel branch-panel">
       <div className="section-heading small">
         <h3>
-          <GitBranch size={16} /> 从历史决策分叉
+          <GitBranch size={16} /> {t("Fork from a past decision")}
         </h3>
-        <span>复制起点 · 相同市场种子</span>
+        <span>{t("Copies the starting point · same market seed")}</span>
       </div>
       <p>
-        历史回放只读取记录；分叉会创建独立比赛，后续执行会按所选模型产生新的调用。可调整一家商店，其余席位保留原配置。
+        {t(
+          "Replay only reads saved records. A fork creates a separate match, and later rounds make new calls to the chosen models. You can change one store; the other seats keep their configuration.",
+        )}
       </p>
       <div className="form-grid three">
         <label className="field">
-          分叉回合
+          {t("Fork round")}
           <input
-            aria-label="分叉回合"
+            aria-label={t("Fork round")}
             type="number"
             min="0"
             max={Math.min(arena.current_round, arena.total_rounds - 1)}
@@ -113,93 +116,95 @@ export function BranchPanel({
           />
         </label>
         <label className="field">
-          调整商店
+          {t("Store to change")}
           <select
             value={slot}
             onChange={(event) => setSlot(+event.target.value)}
           >
             {arena.snapshot.merchants.map((merchant, index) => (
               <option value={index} key={merchant.id}>
-                {merchant.name}
+                {st(merchant.name)}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          后续策略
+          {t("Strategy after fork")}
           <select
             value={strategy}
             onChange={(event) => setStrategy(event.target.value)}
           >
-            <option value="">保留原策略</option>
+            <option value="">{t("Keep original strategy")}</option>
             {strategies.data?.map((item) => (
               <option value={item.id} key={item.id}>
-                {item.name}
+                {st(item.name)}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          后续流程
+          {t("Workflow after fork")}
           <select
             value={workflow}
             onChange={(event) => setWorkflow(event.target.value)}
           >
-            <option value="keep">保留原流程</option>
-            <option value="direct">标准决策</option>
-            <option value="reviewed">试算与审核</option>
-            <option value="adaptive">自主规划</option>
+            <option value="keep">{t("Keep original workflow")}</option>
+            <option value="direct">{t("Standard decision")}</option>
+            <option value="reviewed">{t("Projection and review")}</option>
+            <option value="adaptive">{t("Adaptive planning")}</option>
           </select>
         </label>
         <label className="field">
-          记忆
+          {t("Memory setting")}
           <select
             value={memory}
             onChange={(event) => setMemory(event.target.value)}
           >
-            <option value="keep">保留原设置</option>
-            <option value="none">关闭记忆</option>
-            <option value="recent">最近五轮</option>
-            <option value="episodic">检索历史经验</option>
+            <option value="keep">{t("Keep original setting")}</option>
+            <option value="none">{t("No memory")}</option>
+            <option value="recent">{t("Last five rounds")}</option>
+            <option value="episodic">{t("Retrieve past experience")}</option>
           </select>
         </label>
         <label className="field">
-          供应商协商
+          {t("Supplier negotiation")}
           <select
             value={negotiation}
             onChange={(event) => setNegotiation(event.target.value)}
           >
-            <option value="keep">保留原设置</option>
-            <option value="on">开启</option>
-            <option value="off">关闭</option>
+            <option value="keep">{t("Keep original setting")}</option>
+            <option value="on">{t("On")}</option>
+            <option value="off">{t("Off")}</option>
           </select>
         </label>
       </div>
       <Button variant="secondary" busy={busy} onClick={create}>
         <GitBranch size={15} />
-        创建独立分叉
+        {t("Create fork")}
       </Button>
       {comparison?.parent && (
         <>
           <p>
-            源比赛：
+            {t("Source match: ")}
             <Link to={`/arenas/${comparison.parent.id}`}>
-              {comparison.parent.name}
+              {st(comparison.parent.name)}
             </Link>{" "}
-            · 从第 {comparison.fork_round}{" "}
-            轮分叉，下面比较双方都已结算的最新同一回合。
+            {t(
+              "· Forked at round {round}; the chart compares the latest round both runs have settled.",
+              { round: comparison.fork_round },
+            )}
           </p>
           {comparison.points.length > 0 && (
             <div className="branch-chart">
               <label className="field">
-                比较商店
+                {t("Compare store")}
                 <select
                   value={compareSlot}
                   onChange={(event) => setCompareSlot(+event.target.value)}
                 >
                   {arena.snapshot.merchants.map((store, index) => (
                     <option value={index} key={store.id}>
-                      {store.name}
+                      {st(store.name)}
                     </option>
                   ))}
                 </select>
@@ -212,11 +217,11 @@ export function BranchPanel({
               <div className="branch-chart-legend">
                 <span>
                   <i />
-                  原策略
+                  {t("Original")}
                 </span>
                 <span>
                   <i />
-                  分叉策略
+                  {t("Fork")}
                 </span>
               </div>
             </div>
@@ -224,7 +229,7 @@ export function BranchPanel({
           <div className="branch-result">
             {comparison.points.at(-1)?.merchants.map((merchant) => (
               <span key={merchant.name}>
-                <b>{merchant.name}</b> · 收益差{" "}
+                <b>{st(merchant.name)}</b> · {t("Profit difference")}{" "}
                 {signedMoney(merchant.difference)}
               </span>
             ))}
@@ -254,7 +259,7 @@ function BranchChart({
     70 + (round / Math.max(1, points.at(-1)!.round)) * 480;
   const y = (profit: number) => 180 - ((profit - low) / (high - low)) * 145;
   return (
-    <svg viewBox="0 0 590 220" role="img" aria-label="原策略与分叉策略收益对比">
+    <svg viewBox="0 0 590 220" role="img" aria-label={t("Profit of original vs. forked strategy")}>
       {[0, 0.5, 1].map((ratio) => (
         <g key={ratio}>
           <line
@@ -288,7 +293,7 @@ function BranchChart({
         textAnchor="middle"
         className="chart-label"
       >
-        R{forkRound} 分叉
+        R{forkRound} {t("fork")}
       </text>
       {(["parent_profit", "fork_profit"] as const).map((field) => (
         <path

@@ -14,6 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useResource } from "./api";
+import { getLang, setLang, t } from "./i18n";
 import type { Catalog } from "./types";
 import { ErrorState, Loading, ToastProvider } from "./components/ui";
 import { Dashboard } from "./pages/Dashboard";
@@ -23,9 +24,9 @@ import { ExperimentsPage } from "./pages/ExperimentsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 const NAVIGATION = [
-  { to: "/", name: "竞技场", en: "ARENA", icon: LayoutGrid },
-  { to: "/strategies", name: "策略库", en: "STRATEGIES", icon: Zap },
-  { to: "/experiments", name: "实验室", en: "LABORATORY", icon: FlaskConical },
+  { to: "/", name: "Arena", en: "ARENA", icon: LayoutGrid },
+  { to: "/strategies", name: "Strategies", en: "STRATEGIES", icon: Zap },
+  { to: "/experiments", name: "Lab", en: "LABORATORY", icon: FlaskConical },
 ];
 
 export default function App() {
@@ -38,12 +39,14 @@ export default function App() {
   }, [mobileOpen]);
   const location = useLocation();
   const arenaView = location.pathname.startsWith("/arenas/");
-  const pageName = arenaView
-    ? "对局实况"
-    : location.pathname === "/settings"
-      ? "运行设置"
-      : NAVIGATION.find((item) => item.to === location.pathname)?.name ||
-        "竞技场";
+  const pageName = t(
+    arenaView
+      ? "Live match"
+      : location.pathname === "/settings"
+        ? "Settings"
+        : NAVIGATION.find((item) => item.to === location.pathname)?.name ||
+          "Arena",
+  );
   const nav = (
     <>
       <Link to="/" className="brand" onClick={() => setMobileOpen(false)}>
@@ -57,7 +60,7 @@ export default function App() {
         </span>
       </Link>
       <div className="nav-section-label">WORKSPACE</div>
-      <nav className="main-navigation" aria-label="主导航">
+      <nav className="main-navigation" aria-label={t("Main navigation")}>
         {NAVIGATION.map((item) => (
           <NavLink
             key={item.to}
@@ -70,7 +73,7 @@ export default function App() {
           >
             <item.icon size={19} strokeWidth={1.7} />
             <span>
-              {item.name}
+              {t(item.name)}
               <small>{item.en}</small>
             </span>
             <ChevronRight size={14} />
@@ -87,7 +90,7 @@ export default function App() {
           onClick={() => setMobileOpen(false)}
         >
           <Settings2 size={18} />
-          <span>运行设置</span>
+          <span>{t("Settings")}</span>
         </NavLink>
         <a
           className="sidebar-docs"
@@ -96,7 +99,7 @@ export default function App() {
           rel="noreferrer"
         >
           <BookOpen size={15} />
-          API 文档
+          {t("API docs")}
           <ArrowUpRight size={14} />
         </a>
         <div className="sidebar-version">
@@ -113,13 +116,13 @@ export default function App() {
     <ToastProvider>
       <div className="app-shell">
         <a className="skip-link" href="#main-content">
-          跳到主内容
+          {t("Skip to main content")}
         </a>
         <aside className="sidebar">{nav}</aside>
         <dialog
           ref={mobileDialog}
           className="mobile-nav-dialog"
-          aria-label="工作台导航"
+          aria-label={t("Workspace navigation")}
           onCancel={() => setMobileOpen(false)}
           onClick={(event) => {
             if (event.target === mobileDialog.current) setMobileOpen(false);
@@ -128,7 +131,7 @@ export default function App() {
           <aside className="mobile-nav">
             <button
               className="mobile-close icon-button"
-              aria-label="关闭导航"
+              aria-label={t("Close navigation")}
               onClick={() => setMobileOpen(false)}
             >
               <X size={20} />
@@ -140,13 +143,13 @@ export default function App() {
           <header className="topbar">
             <button
               className="mobile-toggle icon-button"
-              aria-label="打开导航"
+              aria-label={t("Open navigation")}
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={22} />
             </button>
             <div className="breadcrumbs">
-              <span>工作空间</span>
+              <span>{t("Workspace")}</span>
               <ChevronRight size={13} />
               <strong>{pageName}</strong>
             </div>
@@ -155,6 +158,14 @@ export default function App() {
                 <i />
                 LOCAL WORKSPACE
               </span>
+              <button
+                className="language-toggle"
+                aria-label={t("Switch language")}
+                title={t("Switch language")}
+                onClick={() => setLang(getLang() === "zh" ? "en" : "zh")}
+              >
+                {getLang() === "zh" ? "EN" : "中文"}
+              </button>
               <span className="topbar-avatar">AA</span>
             </div>
           </header>
@@ -180,8 +191,8 @@ export default function App() {
                   path="*"
                   element={
                     <div className="not-found">
-                      <h1>找不到这个页面</h1>
-                      <Link to="/">返回竞技场</Link>
+                      <h1>{t("Page not found")}</h1>
+                      <Link to="/">{t("Back to Arena")}</Link>
                     </div>
                   }
                 />

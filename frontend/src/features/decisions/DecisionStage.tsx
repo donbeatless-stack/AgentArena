@@ -5,11 +5,12 @@ import { Avatar, Button } from "../../components/ui";
 import type { Arena, DecisionEvent, WorkflowTrace } from "../../types";
 import { DecisionFlow } from "./DecisionFlow";
 import { WorkflowTracePanel } from "./WorkflowTracePanel";
+import { st, t } from "../../i18n";
 
 const NAMES: Record<string, string> = {
-  coffee: "咖啡",
-  oats: "燕麦",
-  bar: "能量棒",
+  coffee: "Coffee",
+  oats: "Oats",
+  bar: "Energy bar",
 };
 
 export function DecisionStage({
@@ -141,12 +142,15 @@ export function DecisionStage({
         <div>
           <span className="eyebrow">DECISION LIVE</span>
           <h2>
-            决策现场 <small>第 {currentRound} 轮</small>
+            {t("Decision live")}{" "}
+            <small>{t("Round {round}", { round: currentRound })}</small>
           </h2>
         </div>
         <span className={`stream-badge ${connected ? "connected" : ""}`}>
           <Radio size={13} />
-          {cursor === null && round === null ? "跟随真实执行" : "历史事件回放"}
+          {cursor === null && round === null
+            ? t("Following live execution")
+            : t("Event replay")}
         </span>
       </div>
       {error && <p className="stream-error">{error}</p>}
@@ -162,11 +166,13 @@ export function DecisionStage({
                 className={merchantId === merchant.id ? "selected" : ""}
                 onClick={() => setSelected(merchant.id)}
               >
-                <Avatar name={merchant.name} color={merchant.color} small />
+                <Avatar name={st(merchant.name)} color={merchant.color} small />
                 <span>
-                  <strong>{merchant.name}</strong>
-                  <small>{last?.label || "等待执行"}</small>
-                  <small>{merchant.model_config?.model || "确定性策略"}</small>
+                  <strong>{st(merchant.name)}</strong>
+                  <small>{last ? st(last.label) : t("Queued")}</small>
+                  <small>
+                    {merchant.model_config?.model || t("Deterministic strategy")}
+                  </small>
                 </span>
               </button>
             );
@@ -179,7 +185,7 @@ export function DecisionStage({
               setPlaying(false);
             }}
           >
-            跟随当前商店
+            {t("Follow active store")}
           </button>
         </aside>
         <div className="live-decision-content">
@@ -189,32 +195,44 @@ export function DecisionStage({
             role="status"
           >
             <i />
-            <strong>{current?.label || "等待这一轮开始"}</strong>
-            {waiting && cursor === null && <span>已等待 {elapsed} 秒</span>}
+            <strong>
+              {current ? st(current.label) : t("Waiting for this round to start")}
+            </strong>
+            {waiting && cursor === null && (
+              <span>{t("Waited {seconds}s", { seconds: elapsed })}</span>
+            )}
             {current?.payload.duration_ms !== undefined && (
               <span>{current.payload.duration_ms} ms</span>
             )}
           </div>
           {evidence && (
             <div className="decision-facts">
-              <span>观察现金 ¥{money(evidence.cash)}</span>
-              <span>{evidence.market_event}</span>
+              <span>{t("Observed cash ¥{cash}", { cash: money(evidence.cash) })}</span>
+              <span>{st(evidence.market_event)}</span>
               {evidence.inventory.map((stock) => (
                 <span key={stock.product_id}>
-                  {NAMES[stock.product_id]}库存 {stock.quantity}
+                  {t("{product} stock {count}", {
+                    product: t(NAMES[stock.product_id]),
+                    count: stock.quantity,
+                  })}
                 </span>
               ))}
             </div>
           )}
           {routing && (
             <div className="decision-evidence">
-              <strong>目标：{routing.objective}</strong>
-              <p>{routing.reason}</p>
+              <strong>{t("Goal: {goal}", { goal: st(routing.objective) })}</strong>
+              <p>{st(routing.reason)}</p>
               <small>
-                允许工具：{routing.tools.join("、") || "已有信息足够"} ·{" "}
+                {t("Allowed tools: {tools}", {
+                  tools:
+                    routing.tools.join(t(", ")) ||
+                    t("existing information is enough"),
+                })}{" "}
+                ·{" "}
                 {routing.review_required
-                  ? "需要独立审核"
-                  : "按风险决定是否审核"}
+                  ? t("Independent review required")
+                  : t("Review depends on risk")}
               </small>
             </div>
           )}
@@ -225,20 +243,23 @@ export function DecisionStage({
           )}
           {previous && plan && (
             <div className="decision-diff">
-              <h3>方案修改</h3>
+              <h3>{t("Plan changes")}</h3>
               {plan.products.map((action) => {
                 const old = previous.products.find(
                   (item) => item.product_id === action.product_id,
                 )!;
                 return (
                   <p key={action.product_id}>
-                    <b>{NAMES[action.product_id]}</b>
+                    <b>{t(NAMES[action.product_id])}</b>
                     <span
                       className={
                         old.price !== action.price ? "changed-value" : ""
                       }
                     >
-                      定价 ¥{money(old.price)} → ¥{money(action.price)}
+                      {t("Price ¥{from} → ¥{to}", {
+                        from: money(old.price),
+                        to: money(action.price),
+                      })}
                     </span>
                     <span
                       className={
@@ -247,14 +268,19 @@ export function DecisionStage({
                           : ""
                       }
                     >
-                      补货 {old.purchase_quantity} → {action.purchase_quantity}
+                      {t("Restock {from} → {to}", {
+                        from: old.purchase_quantity,
+                        to: action.purchase_quantity,
+                      })}
                     </span>
                   </p>
                 );
               })}
               <p>
-                营销 ¥{money(previous.marketing_budget)} → ¥
-                {money(plan.marketing_budget)}
+                {t("Marketing ¥{from} → ¥{to}", {
+                  from: money(previous.marketing_budget),
+                  to: money(plan.marketing_budget),
+                })}
               </p>
             </div>
           )}
@@ -262,19 +288,19 @@ export function DecisionStage({
           {settled?.payload.metrics && (
             <div className="forecast-actual">
               <span>
-                预测净收益
+                {t("Projected net profit")}
                 <strong>
                   {settled.payload.projection
                     ? signedMoney(settled.payload.projection.expected_profit)
-                    : "未记录"}
+                    : t("Not recorded")}
                 </strong>
               </span>
               <span>
-                实际净收益
+                {t("Actual net profit")}
                 <strong>{signedMoney(settled.payload.metrics.profit)}</strong>
               </span>
               <span>
-                预测偏差
+                {t("Forecast error")}
                 <strong>
                   {settled.payload.projection
                     ? signedMoney(
@@ -310,7 +336,7 @@ export function DecisionStage({
               }}
             >
               {playing ? <Pause size={14} /> : <Play size={14} />}
-              {playing ? "暂停事件回放" : "播放事件回放"}
+              {playing ? t("Pause event replay") : t("Play event replay")}
             </Button>
             <Button
               variant="ghost"
@@ -323,7 +349,7 @@ export function DecisionStage({
               <SkipForward size={15} />
             </Button>
             <select
-              aria-label="事件回放速度"
+              aria-label={t("Event replay speed")}
               value={speed}
               onChange={(event) => setSpeed(+event.target.value)}
             >
@@ -338,13 +364,13 @@ export function DecisionStage({
                 setPlaying(false);
               }}
             >
-              返回最新
+              {t("Back to latest")}
             </button>
           </div>
           <input
             className="event-slider"
             type="range"
-            aria-label="执行事件位置"
+            aria-label={t("Execution event position")}
             min="0"
             max={Math.max(0, ownEvents.length - 1)}
             value={cursor ?? Math.max(0, ownEvents.length - 1)}
@@ -353,7 +379,7 @@ export function DecisionStage({
               setPlaying(false);
             }}
           />
-          <div className="event-log" aria-label="执行事件记录">
+          <div className="event-log" aria-label={t("Execution event log")}>
             {visible
               .slice(-80)
               .reverse()
@@ -370,7 +396,9 @@ export function DecisionStage({
           </div>
           {!ownEvents.length && (
             <p className="empty-note">
-              开始比赛后，真实的节点与工具事件将在这里出现。旧比赛仍可查看下方已保存的决策记录。
+              {t(
+                "Once the match starts, real node and tool events appear here. Older matches still show their saved decisions below.",
+              )}
             </p>
           )}
         </div>
@@ -401,7 +429,7 @@ function EventRow({
           })}
         </button>
         <span className={`event-dot event-${event.status}`} />
-        <strong>{event.label}</strong>
+        <strong>{st(event.label)}</strong>
         <small>{event.payload.tool || event.node}</small>
       </summary>
       <pre>{JSON.stringify(event.payload, null, 2)}</pre>

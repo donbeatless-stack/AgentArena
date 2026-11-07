@@ -3,6 +3,7 @@ import { count, money, signedMoney } from "../../api";
 import { COLORS, Sparkline } from "../../components/Charts";
 import { Avatar } from "../../components/ui";
 import type { Arena, Merchant } from "../../types";
+import { st, t } from "../../i18n";
 
 export function StoreCard({
   merchant,
@@ -20,17 +21,17 @@ export function StoreCard({
   return (
     <article className={`store-card store-${merchant.color}`}>
       <div className="store-heading">
-        <Avatar name={merchant.name} color={merchant.color} />
+        <Avatar name={st(merchant.name)} color={merchant.color} />
         <div>
-          <h3>{merchant.name}</h3>
-          <span>{merchant.strategy_name}</span>
+          <h3>{st(merchant.name)}</h3>
+          <span>{st(merchant.strategy_name)}</span>
           {merchant.model_config?.model && (
             <small className="model-tag">{merchant.model_config.model}</small>
           )}
         </div>
         <span className="engine-badge">
           {merchant.bankrupt ? (
-            "已退场"
+            t("Exited")
           ) : merchant.mode === "llm" ? (
             <>
               <Bot size={12} />
@@ -39,14 +40,14 @@ export function StoreCard({
           ) : (
             <>
               <Zap size={12} />
-              策略
+              {t("Rule")}
             </>
           )}
         </span>
       </div>
       <div className="store-profit">
         <div>
-          <span>累计净收益</span>
+          <span>{t("Net profit")}</span>
           <strong className={merchant.profit >= 0 ? "positive" : "negative"}>
             {signedMoney(merchant.profit)}
           </strong>
@@ -55,34 +56,36 @@ export function StoreCard({
       </div>
       <div className="store-financials">
         <span>
-          可用现金<b>¥{money(merchant.cash)}</b>
+          {t("Cash")}
+          <b>¥{money(merchant.cash)}</b>
         </span>
         <span>
-          总资产<b>¥{money(merchant.equity)}</b>
+          {t("Equity")}
+          <b>¥{money(merchant.equity)}</b>
         </span>
         <span>
-          本轮销量
+          {t("Sold this round")}
           <b>
             {merchant.metrics.sold}
-            <small> 件</small>
+            <small> {t("units")}</small>
           </b>
         </span>
       </div>
       <div className="inventory-table">
         <div className="inventory-labels">
-          <span>商品</span>
-          <span>库存</span>
-          <span>售价</span>
+          <span>{t("Product")}</span>
+          <span>{t("Stock")}</span>
+          <span>{t("Price")}</span>
         </div>
         {merchant.inventory.map((stock) => (
           <div key={stock.product_id}>
             <span>
               <i className={`product-dot product-${stock.product_id}`} />
-              {stock.name}
+              {st(stock.name)}
             </span>
             <span className={stock.quantity === 0 ? "negative" : ""}>
               {stock.quantity}
-              <small> 件</small>
+              <small> {t("units")}</small>
             </span>
             <b>¥{money(stock.price)}</b>
           </div>
@@ -94,7 +97,9 @@ export function StoreCard({
           {merchant.roi >= 0 ? "+" : ""}
           {merchant.roi}%
         </span>
-        <span>累计售出 {count(merchant.total_sold)} 件</span>
+        <span>
+          {t("{count} sold in total", { count: count(merchant.total_sold) })}
+        </span>
       </div>
     </article>
   );

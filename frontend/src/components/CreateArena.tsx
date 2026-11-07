@@ -13,27 +13,33 @@ import type {
 } from "../types";
 import { Avatar, Button, Modal, useToast } from "./ui";
 import { AgentOptionsFields } from "../features/decisions/AgentOptionsFields";
+import { st, t } from "../i18n";
 
 const INITIAL: ArenaInput = {
-  name: "新的商业对局",
+  name: "New business match",
   scenario: "neighborhood",
   total_rounds: 20,
   seed: 42,
   initial_capital: 1000000,
   merchants: [
     {
-      name: "北辰商店",
+      name: "Northstar Shop",
       strategy_id: "balanced",
       mode: "rule",
       color: "violet",
     },
     {
-      name: "橙子补给",
+      name: "Orange Supply",
       strategy_id: "discount",
       mode: "rule",
       color: "orange",
     },
-    { name: "青禾市集", strategy_id: "premium", mode: "rule", color: "teal" },
+    {
+      name: "Greenfield Market",
+      strategy_id: "premium",
+      mode: "rule",
+      color: "teal",
+    },
   ],
 };
 const DEFAULT_OPTIONS = {
@@ -47,6 +53,19 @@ INITIAL.merchants = INITIAL.merchants.map((merchant) => ({
   agent_options: { ...DEFAULT_OPTIONS },
 }));
 
+// Default names are English source strings, localized when the form opens.
+function initialForm(): ArenaInput {
+  const form = structuredClone(INITIAL);
+  return {
+    ...form,
+    name: t(form.name),
+    merchants: form.merchants.map((merchant) => ({
+      ...merchant,
+      name: t(merchant.name),
+    })),
+  };
+}
+
 export function CreateArena({
   open,
   close,
@@ -58,13 +77,13 @@ export function CreateArena({
   strategies: Strategy[];
   catalog: Catalog;
 }) {
-  const [form, setForm] = useState<ArenaInput>(INITIAL);
+  const [form, setForm] = useState<ArenaInput>(initialForm);
   const [busy, setBusy] = useState(false);
   const profiles = useResource<ModelProfile[]>("/model-profiles");
   const toast = useToast(),
     navigate = useNavigate();
   useEffect(() => {
-    if (open) setForm(structuredClone(INITIAL));
+    if (open) setForm(initialForm());
   }, [open]);
   const updateMerchant = (index: number, field: string, value: string) =>
     setForm({
@@ -88,7 +107,7 @@ export function CreateArena({
       ),
     });
   return (
-    <Modal title="创建对局" open={open} onClose={close} wide>
+    <Modal title={t("New match")} open={open} onClose={close} wide>
       <form
         onSubmit={async (event) => {
           event.preventDefault();
@@ -109,7 +128,7 @@ export function CreateArena({
       >
         <div className="modal-body">
           <label className="field">
-            对局名称
+            {t("Match name")}
             <input
               value={form.name}
               maxLength={60}
@@ -120,7 +139,7 @@ export function CreateArena({
             />
           </label>
           <div className="field">
-            <span>选择市场</span>
+            <span>{t("Choose a market")}</span>
             <div className="scenario-options">
               {catalog.scenarios.map((scenario) => (
                 <label
@@ -137,15 +156,15 @@ export function CreateArena({
                   <span className="scenario-icon">
                     <WandSparkles size={18} />
                   </span>
-                  <strong>{scenario.name}</strong>
-                  <small>{scenario.tag}</small>
+                  <strong>{st(scenario.name)}</strong>
+                  <small>{st(scenario.tag)}</small>
                 </label>
               ))}
             </div>
           </div>
           <div className="form-grid three">
             <label className="field">
-              回合数
+              {t("Rounds")}
               <input
                 type="number"
                 min={3}
@@ -158,7 +177,7 @@ export function CreateArena({
               />
             </label>
             <label className="field">
-              初始资金（元）
+              {t("Starting cash (¥)")}
               <input
                 type="number"
                 min={3000}
@@ -175,7 +194,7 @@ export function CreateArena({
               />
             </label>
             <label className="field">
-              市场种子
+              {t("Market seed")}
               <input
                 type="number"
                 min={1}
@@ -189,10 +208,11 @@ export function CreateArena({
             </label>
           </div>
           <div className="section-label">
-            参赛商店<span>{form.merchants.length} / 4</span>
+            {t("Stores")}
+            <span>{form.merchants.length} / 4</span>
           </div>
           <label className="field">
-            人工审批
+            {t("Human approval")}
             <select
               value={form.approval_policy || "off"}
               onChange={(event) =>
@@ -203,9 +223,11 @@ export function CreateArena({
                 })
               }
             >
-              <option value="off">自动执行</option>
-              <option value="risk">大额采购或现金风险时审批</option>
-              <option value="all">每轮方案都需审批</option>
+              <option value="off">{t("Run automatically")}</option>
+              <option value="risk">
+                {t("Approve large purchases or cash risk")}
+              </option>
+              <option value="all">{t("Approve every plan")}</option>
             </select>
           </label>
           <div className="merchant-form-list">
@@ -213,9 +235,9 @@ export function CreateArena({
               <div className="merchant-form" key={index}>
                 <Avatar name={merchant.name} color={merchant.color} />
                 <label className="field merchant-name">
-                  商店 {index + 1} 名称
+                  {t("Store {number} name", { number: index + 1 })}
                   <input
-                    aria-label={`商店 ${index + 1} 名称`}
+                    aria-label={t("Store {number} name", { number: index + 1 })}
                     value={merchant.name}
                     maxLength={20}
                     required
@@ -225,9 +247,9 @@ export function CreateArena({
                   />
                 </label>
                 <label className="field merchant-strategy">
-                  经营策略
+                  {t("Strategy")}
                   <select
-                  aria-label={`商店 ${index + 1} 策略`}
+                  aria-label={t("Store {number} strategy", { number: index + 1 })}
                   value={merchant.strategy_id}
                   onChange={(event) =>
                     updateMerchant(index, "strategy_id", event.target.value)
@@ -235,21 +257,23 @@ export function CreateArena({
                 >
                   {strategies.map((strategy) => (
                     <option key={strategy.id} value={strategy.id}>
-                      {strategy.name}
+                      {st(strategy.name)}
                     </option>
                   ))}
                   </select>
                 </label>
                 <label className="field merchant-engine">
-                  决策引擎
+                  {t("Decision engine")}
                   <select
-                  aria-label={`商店 ${index + 1} 决策引擎`}
+                  aria-label={t("Store {number} decision engine", {
+                    number: index + 1,
+                  })}
                   value={merchant.mode}
                   onChange={(event) =>
                     updateMerchant(index, "mode", event.target.value as Mode)
                   }
                 >
-                  <option value="rule">策略引擎</option>
+                  <option value="rule">{t("Rule engine")}</option>
                   <option value="llm">LLM Agent</option>
                   </select>
                 </label>
@@ -257,7 +281,7 @@ export function CreateArena({
                   type="button"
                   className="icon-button"
                   disabled={form.merchants.length <= 2}
-                  aria-label={`移除商店 ${index + 1}`}
+                  aria-label={t("Remove store {number}", { number: index + 1 })}
                   onClick={() =>
                     setForm({
                       ...form,
@@ -272,10 +296,10 @@ export function CreateArena({
                 <div className="merchant-model-fields">
                   {merchant.mode === "llm" && (
                     <label className="field">
-                      模型连接
+                      {t("Model connection")}
                       <select
                         required
-                        aria-label={`商店 ${index + 1} 模型`}
+                        aria-label={t("Store {number} model", { number: index + 1 })}
                         value={merchant.model_profile_id || "default"}
                         onChange={(event) =>
                           updateMerchant(
@@ -289,33 +313,45 @@ export function CreateArena({
                           .filter((profile) => profile.enabled)
                           .map((profile) => (
                             <option key={profile.id} value={profile.id}>
-                              {profile.name} · {profile.model || "未配置"}
+                              {st(profile.name)} · {profile.model || t("Not configured")}
                             </option>
                           ))}
                       </select>
                     </label>
                   )}
                   <label className="field">
-                    决策流程
+                    {t("Decision workflow")}
                     <select
-                      aria-label={`商店 ${index + 1} 决策流程`}
+                      aria-label={t("Store {number} workflow", { number: index + 1 })}
                       value={merchant.workflow || "direct"}
                       onChange={(event) =>
                         updateMerchant(index, "workflow", event.target.value)
                       }
                     >
-                      <option value="direct">{merchant.mode === "llm" ? "标准决策" : "按规则决策"}</option>
-                      <option value="reviewed">{merchant.mode === "llm" ? "试算与审核" : "规则试算与风险检查"}</option>
-                      <option value="adaptive">{merchant.mode === "llm" ? "自主规划与动态审核" : "按风险触发规则试算"}</option>
+                      <option value="direct">
+                        {merchant.mode === "llm"
+                          ? t("Standard decision")
+                          : t("Decide by rules")}
+                      </option>
+                      <option value="reviewed">
+                        {merchant.mode === "llm"
+                          ? t("Projection and review")
+                          : t("Rule projection and risk check")}
+                      </option>
+                      <option value="adaptive">
+                        {merchant.mode === "llm"
+                          ? t("Adaptive planning with dynamic review")
+                          : t("Risk-triggered rule projection")}
+                      </option>
                     </select>
                   </label>
                   <p className="model-cost-hint">
                     {merchant.mode === "llm"
-                      ? "按回合调用模型 · 默认关闭多轮谈判以节省 Token"
-                      : "按固定规则经营，可启用历史经验和规则议价；不调用模型，不消耗 Token。"}
+                      ? t("Calls the model each round · multi-round negotiation is off by default to save tokens")
+                      : t("Runs on fixed rules; experience recall and rule-based bargaining are optional. No model calls, no tokens.")}
                   </p>
                   <AgentOptionsFields
-                    label={`商店 ${index + 1} `}
+                    label={t("Store {number} ", { number: index + 1 })}
                     mode={merchant.mode}
                     value={merchant.agent_options}
                     onChange={(agent_options) =>
@@ -341,7 +377,7 @@ export function CreateArena({
                   merchants: [
                     ...form.merchants,
                     {
-                      name: "蓝鲸便利",
+                      name: t("Blue Whale Mart"),
                       strategy_id: "adaptive",
                       mode: "rule",
                       color: "blue" as Color,
@@ -353,16 +389,16 @@ export function CreateArena({
               }
             >
               <Plus size={16} />
-              添加商店
+              {t("Add store")}
             </Button>
           )}
         </div>
         <div className="modal-footer">
           <Button variant="secondary" type="button" onClick={close}>
-            取消
+            {t("Cancel")}
           </Button>
           <Button type="submit" busy={busy}>
-            创建对局
+            {t("New match")}
             <ArrowRight size={16} />
           </Button>
         </div>

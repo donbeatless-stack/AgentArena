@@ -1,14 +1,15 @@
 import type { DecisionEvent } from "../../types";
+import { st, t } from "../../i18n";
 
 const NODES = [
-  ["observe", "观察环境", 90, 55],
-  ["route", "规划行动", 310, 55],
-  ["decide", "生成方案", 530, 55],
-  ["simulate", "候选试算", 750, 55],
-  ["commit_plan", "提交方案", 90, 210],
-  ["negotiate", "供应商协商", 310, 210],
-  ["approval", "人工审批", 530, 210],
-  ["review", "风险审核", 750, 210],
+  ["observe", "Observe", 90, 55],
+  ["route", "Plan actions", 310, 55],
+  ["decide", "Draft plan", 530, 55],
+  ["simulate", "Project candidates", 750, 55],
+  ["commit_plan", "Commit plan", 90, 210],
+  ["negotiate", "Negotiate supply", 310, 210],
+  ["approval", "Human approval", 530, 210],
+  ["review", "Risk review", 750, 210],
 ] as const;
 const EDGES = [
   ["observe", "route", "M170 55H230"],
@@ -32,12 +33,16 @@ export function DecisionFlow({ events }: { events: DecisionEvent[] }) {
     active?.node === "review" &&
     active.payload.reviews?.at(-1)?.approved === false;
   return (
-    <div className="flow-scroll" aria-label="实时决策流程">
+    <div className="flow-scroll" aria-label={t("Live decision flow")}>
       <svg
         className="decision-flow"
         viewBox="0 0 860 285"
         role="img"
-        aria-label={active ? `当前：${active.label}` : "等待经营决策"}
+        aria-label={
+          active
+            ? t("Current: {label}", { label: st(active.label) })
+            : t("Waiting for a decision")
+        }
       >
         <defs>
           <marker
@@ -66,7 +71,7 @@ export function DecisionFlow({ events }: { events: DecisionEvent[] }) {
           markerEnd="url(#flow-arrow)"
         />
         <text x="620" y="131" className="flow-caption">
-          驳回后重新规划
+          {t("Replan after rejection")}
         </text>
         {NODES.map(([key, label, x, y]) => {
           const last = events.filter((event) => event.node === key).at(-1);
@@ -88,20 +93,20 @@ export function DecisionFlow({ events }: { events: DecisionEvent[] }) {
               <rect width="160" height="60" rx="15" />
               <circle cx="20" cy="30" r="4" />
               <text x="36" y="28">
-                {label}
+                {t(label)}
               </text>
               <text x="36" y="46" className="flow-caption">
                 {running
                   ? active.status === "waiting"
-                    ? "等待你的决定"
-                    : "正在执行"
+                    ? t("Waiting for you")
+                    : t("Working")
                   : last
                     ? last.status === "failed"
-                      ? "执行中断"
+                      ? t("Interrupted")
                       : last.status === "skipped"
-                        ? "本轮跳过"
-                        : "已执行"
-                    : "按条件执行"}
+                        ? t("Skipped this round")
+                        : t("Done")
+                    : t("Runs when needed")}
               </text>
             </g>
           );
